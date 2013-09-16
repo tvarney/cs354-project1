@@ -2,9 +2,10 @@
 #ifndef CS354_GENERIC_MODEL_IO_HPP
 #define CS354_GENERIC_MODEL_IO_HPP
 
+#include <list>
+#include <map>
 #include <stdio.h>
 #include <vector>
-#include <list>
 #include "Model.hpp"
 #include "../common.hpp"
 
@@ -51,7 +52,8 @@ namespace cs354 {
         std::vector<FaceArg> face_args;
         std::string next_mtl;
         Model *ptr;
-        PolyGroup *current;
+        PolyGroup *current_group;
+        MaterialGroup *current_mgroup;
         
         std::map<std::string, Material> materials;
     } model_parser_state;

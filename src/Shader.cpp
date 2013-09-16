@@ -10,6 +10,8 @@
  */
 
 #include "generic/Shader.hpp"
+
+#include "generic/Model.hpp"
 #include <sstream>
 #include <stdio.h>
 #include <stdexcept>
@@ -127,6 +129,9 @@ void Shader::link() {
 
 void Shader::use() {
     glUseProgram(program);
+    /* Update the locations for the current material,
+       set them to the default */
+    Material::GetLocations(program);
 }
 
 GLuint Shader::handle() {

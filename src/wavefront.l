@@ -28,7 +28,7 @@
 "usemtl" { return USEMTL; }
 "mtllib" { return MTLLIB; }
 
-[_a-zA-Z][_a-zA-Z0-9]+ { return TYPE_STRING; }
+[a-zA-Z'_''.'][a-zA-Z0-9'_''.']+ { return TYPE_STRING; }
 
 . { fprintf(stderr, "'%s'\n", yytext); }
 

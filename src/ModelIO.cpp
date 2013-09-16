@@ -25,17 +25,18 @@ FaceArg::FaceArg(int v, int vn, int vt) :
 { }
 
 ModelParserState::ModelParserState(Model *ptr) :
-    ptr(ptr), current(NULL)
+    ptr(ptr), current_group(NULL)
 {
     if(ptr != NULL) {
-        current = &(ptr->getGroup(""));
+        current_group = &(ptr->getGroup(""));
+        current_mgroup = &(current_group->getMatGroup(""));
     }
 }
 ModelParserState::~ModelParserState() { }
 
 void ModelParserState::attach(Model &model) {
     ptr = &model;
-    current = &(model.getGroup(""));
+    current_group = &(model.getGroup(""));
 }
 
 void ModelParserState::vertex(GLfloat coords[3]) {
@@ -67,16 +68,16 @@ void ModelParserState::face() {
     int v1 = resolve(face_args[0].v);
     int v2 = resolve(face_args[1].v);
     int v3 = resolve(face_args[2].v);
-    current->elements.push_back(v1);
-    current->elements.push_back(v2);
-    current->elements.push_back(v3);
+    current_mgroup->elements.push_back(v1);
+    current_mgroup->elements.push_back(v2);
+    current_mgroup->elements.push_back(v3);
     
     for(size_t i = 3; i < face_args.size(); ++i) {
         v2 = v3;
         v3 = resolve(face_args[i].v);
-        current->elements.push_back(v1);
-        current->elements.push_back(v2);
-        current->elements.push_back(v3);
+        current_mgroup->elements.push_back(v1);
+        current_mgroup->elements.push_back(v2);
+        current_mgroup->elements.push_back(v3);
     }
     face_args.clear();
 }
@@ -91,8 +92,8 @@ void ModelParserState::usemtl(const char *mtlname) {
     printf("Ignoring 'usemtl %s'\n", mtlname);
 }
 void ModelParserState::group(const char *groupname) {
-    current = &(ptr->getGroup(groupname));
-    /*TODO: bind next_mtl to current group IF set */
+    current_group = &(ptr->getGroup(groupname));
+    /*TODO: bind next_mtl to current_group group IF set */
 }
 
 Model * ModelIO::Load(const char *fname) {

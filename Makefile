@@ -24,12 +24,15 @@ FLAGS := ${CPPFLAGS} ${LFLAGS}
 
 OBJECTS=$(patsubst %.cpp, %.o, $(wildcard ${SRC}/*.cpp))
 
-.PHONEY: all clean
+.PHONEY: all clean run
 
 all: canvas
 
 clean:
 	rm -f ${SRC}/*.o canvas ${SRC}/lex.yy.c ${SRC}/wavefront.tab.h ${SRC}/wavefront.tab.c
+
+run: canvas
+	./canvas
 
 canvas: ${OBJECTS} ${SRC}/parse.o ${SRC}/lex.o
 	${CXX} ${LFLAGS} -o canvas ${OBJECTS} ${LIBS} ${SRC}/lex.o ${SRC}/parse.o

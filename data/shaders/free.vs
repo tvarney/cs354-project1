@@ -29,7 +29,7 @@ void main()
     vec3 diffuse = Light.Ld * Kd * sDotN;
     vec3 spec = vec3(0.0);
     if( sDotN > 0.0 ) {
-        spec = Light.Ls * Ks * pow(max(dot(r,v),0.0), shine);
+        spec = Light.Ls * Ks * pow(max(dot(r,v),0.0), Ns);
     }
     LightIntensity = ambient + diffuse + spec;
     gl_Position = gl_ModelViewProjectionMatrix * vec4(gl_Vertex);

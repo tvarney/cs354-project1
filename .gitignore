@@ -11,3 +11,7 @@
 *.lai
 *.la
 *.a
+
+# Bison and Flex output files
+*.yy.c
+*.tab.*
