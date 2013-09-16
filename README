@@ -1,0 +1,16 @@
+/*
+ * README
+ * ------
+ * Put the results of the Performance Test here.  Also, include the names
+ * of your team members and any special instructions for compiling, etc.,
+ * if you did something besides the standard Makefile.
+ *
+ * Group Members: Troy Varney - tav285 [troy.a.varney@gmail.com]
+ */
+
+Makefile changed significantly.
+Project requires bison and flex to compile (both are on standard CS machines).
+
+Extras:
+Both VRML and the calculated cone respect the display style chosen for GLUT
+calls.
