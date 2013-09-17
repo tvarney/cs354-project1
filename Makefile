@@ -1,50 +1,53 @@
 ###########################################################
 # Project 1 Makefile
-SRC := ./src
-INC := ./inc
-CXX := g++
+SRC  := ./src
+INC  := ./inc
+CXX  := g++
+CC   := g++
+LEX  := flex
+YACC := bison
 
 UNAME := $(shell uname)
 ifeq ($(UNAME), Darwin)
-CPPFLAGS := -Wall -ggdb -D__MAC__ -I${INC}
-LFLAGS := -Wall
+CPPFLAGS := -Wall -ggdb -D__MAC__ -I${INC} -I${SRC}
+LINKFLAGS := -Wall
 LIBS := -framework OpenGL -framework GLUT -lpthread -lpng
 else
-CPPFLAGS := -Wall -ggdb -I${INC}
-LFLAGS := -Wall
+CPPFLAGS := -Wall -ggdb -I${INC} -I${SRC}
+LINKFLAGS := -Wall
 LIBS := -lglut -lGLU -lGL -lpthread -lm -lpng
 endif
 
-FLAGS := ${CPPFLAGS} ${LFLAGS}
+CFLAGS := ${CPPFLAGS}
 
 #INCLUDE = -I/usr/include
 #LIBDIR = -L/usr/lib/x86_64-linux-gnu
 # Libraries that use native graphics hardware --
 #LIBS = -lglut -lGLU -lGL -lpthread -lm
 
-OBJECTS=$(patsubst %.cpp, %.o, $(wildcard ${SRC}/*.cpp))
+OBJECTS = $(patsubst %.cpp, %.o, $(wildcard ${SRC}/*.cpp))
+LEXERS = $(patsubst %.l, %.lex.c, $(wildcard ${SRC}/*.l))
+PARSERS = $(patsubst %.y, %.tab.c, $(wildcard ${SRC}/*.y))
+PARSER_HEADERS = $(patsubst %.c, %.h, ${PARSERS})
+OBJECTS += $(patsubst %.c, %.o, ${LEXERS})
+OBJECTS += $(patsubst %.c, %.o, ${PARSERS})
 
 .PHONEY: all clean run
 
 all: canvas
 
 clean:
-	rm -f ${SRC}/*.o canvas ${SRC}/lex.yy.c ${SRC}/wavefront.tab.h ${SRC}/wavefront.tab.c
+	rm -f ${SRC}/*.o canvas ${PARSERS} ${PARSER_HEADERS} ${LEXERS}
 
 run: canvas
 	./canvas
 
-canvas: ${OBJECTS} ${SRC}/parse.o ${SRC}/lex.o
-	${CXX} ${LFLAGS} -o canvas ${OBJECTS} ${LIBS} ${SRC}/lex.o ${SRC}/parse.o
+canvas: ${PARSERS} ${LEXERS} ${OBJECTS}
+	@echo ${OBJECTS}
+	${CXX} ${LINKFLAGS} -o canvas ${OBJECTS} ${LIBS}
 
-${SRC}/lex.o: ${SRC}/lex.yy.c
-	${CXX} ${FLAGS} -c -I${SRC} -o ${SRC}/lex.o ${SRC}/lex.yy.c ${LIBS}
+%.tab.c: %.y
+	${YACC} -o $@ ${YACCFLAGS} $<
 
-${SRC}/parse.o: ${SRC}/wavefront.tab.c
-	${CXX} ${FLAGS} -c -I${SRC} -o ${SRC}/parse.o ${SRC}/wavefront.tab.c ${LIBS}
-
-${SRC}/wavefront.tab.c: ${SRC}/wavefront.y
-	bison -o ${SRC}/wavefront.tab.c ${SRC}/wavefront.y
-
-${SRC}/lex.yy.c: ${SRC}/wavefront.l
-	flex -o ${SRC}/lex.yy.c ${SRC}/wavefront.l
+%.lex.c: %.l
+	${LEX} -o $@ ${LEXFLAGS} $<

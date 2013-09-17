@@ -1,3 +1,6 @@
+# Executable
+canvas
+
 # Compiled Object files
 *.slo
 *.lo
@@ -13,5 +16,5 @@
 *.a
 
 # Bison and Flex output files
-*.yy.c
+*.lex.c
 *.tab.*

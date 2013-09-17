@@ -4,11 +4,12 @@
 #include "wavefront.tab.h"
 %}
 
-%option noyywrap nounput
+%option noyywrap nounput yylineno
 %option prefix="wf_"
 
 %%
 
+"\n" { }
 "#"[^\n]+"\n" { }
 [[:space:]]+ { }
 
@@ -25,10 +26,11 @@
 "f"      { return ID_F; }
 "/"      { return ID_SEP; }
 "g"      { return GROUP; }
+"s"      { return ID_S; }
 "usemtl" { return USEMTL; }
 "mtllib" { return MTLLIB; }
 
-[a-zA-Z'_''.'][a-zA-Z0-9'_''.']+ { return TYPE_STRING; }
+[a-zA-Z0-9'_''.']+ { return TYPE_STRING; }
 
 . { fprintf(stderr, "'%s'\n", yytext); }
 

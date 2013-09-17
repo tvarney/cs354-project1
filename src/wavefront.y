@@ -15,6 +15,7 @@
 %code requires {
 #include "generic/ModelIO.hpp"
 #include "common.hpp"
+    extern int wf_lineno;
 }
 
 %union {
@@ -34,6 +35,7 @@
 %token ID_VN "vn"
 %token ID_F "f"
 %token ID_SEP "/"
+%token ID_S "s"
 %token TYPE_FLOAT TYPE_INT TYPE_STRING
 %type <float_triplet> float_triple
 %type <int_triplet> face_arg
@@ -58,6 +60,7 @@ statement:
 | "vt" float_triple { cs354::model_parser_state.texture($2); }
 | "f" face_arg_list { cs354::model_parser_state.face(); }
 | "g" strval        { cs354::model_parser_state.group($2); }
+| "s" intv          { fprintf(stderr, "Unsupported Function: 's %d'\n", $2); }
 | "mtllib" strval   { cs354::model_parser_state.mtllib($2); }
 | "usemtl" strval   { cs354::model_parser_state.usemtl($2); }
 ;
@@ -98,7 +101,6 @@ TYPE_STRING { $$ = wf_text; }
 
 %%
 
-void yyerror(const char *str) {
-    fputs(str, stderr);
-    fprintf(stderr, "\nToken: %s\n", wf_text);
+void wf_error(const char *str) {
+    fprintf(stderr, "Error near line %d: %s [%s]\n", wf_lineno, str, wf_text);
 }

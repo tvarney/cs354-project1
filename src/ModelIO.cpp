@@ -7,7 +7,6 @@
 
 #include "generic/ModelIO.hpp"
 #include "generic/Model.hpp"
-#include "generic/Parser.hpp"
 
 #include <cstring>
 #include <cstdio>
@@ -37,6 +36,7 @@ ModelParserState::~ModelParserState() { }
 void ModelParserState::attach(Model &model) {
     ptr = &model;
     current_group = &(model.getGroup(""));
+    current_mgroup = &(current_group->getMatGroup(""));
 }
 
 void ModelParserState::vertex(GLfloat coords[3]) {
