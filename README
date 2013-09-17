@@ -16,15 +16,16 @@ Project 'translated' to C++.
 To make the project works exactly the same, just type 'make'.
 To run the project, either directly run the generated executable, or type
 'make run'. This will compile the executable if it is not already present.
+Running 'make lines' will report the total line count of the project.
 
 Extras:
 1. Both the VRML scene and the calculated cone respect the display style chosen
    for GLUT. This means if the display style is DS_WIRE, those scenes will
-   display a wireframe. Press 's' to change them back.
-2. Project can load a subset of wavefront .obj models and .mtl material
-   libraries.
-   Project will load ./data/model/model.obj and any files included from it or
-   children files.
+   display a wireframe. Press 's' to change them back to filled polygons.
+2. A subset of wavefront .obj and .mtl files can be loaded. The code will
+   attempt to load the model from "./data/model/model.obj" and any files that
+   are included from that file.
 3. The code can compile and link vertex and fragment shaders. Included shaders
    are ./data/shaders/free.vs and ./data/shaders/free.fs, which implement a
    slightly shoddy form of ADS lighting.
+4. The code can load textures from png files. This is currently not used.

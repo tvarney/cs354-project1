@@ -32,7 +32,7 @@ PARSER_HEADERS = $(patsubst %.c, %.h, ${PARSERS})
 OBJECTS += $(patsubst %.c, %.o, ${LEXERS})
 OBJECTS += $(patsubst %.c, %.o, ${PARSERS})
 
-.PHONEY: all clean run
+.PHONEY: all clean run lines
 
 all: canvas
 
@@ -41,6 +41,9 @@ clean:
 
 run: canvas
 	./canvas
+
+lines:
+	@wc -l ${SRC}/*.cpp ${SRC}/*.l ${SRC}/*.y ${INC}/*.hpp ${INC}/generic/*.hpp
 
 canvas: ${PARSERS} ${LEXERS} ${OBJECTS}
 	@echo ${OBJECTS}

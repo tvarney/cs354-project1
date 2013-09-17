@@ -3,21 +3,76 @@ Project 1 Individual Written Questions
 Name: Troy Varney
 Email Address: troy.a.varney@gmail.com
 
-1.
+1. Given an array of vertices, the programmer would need to create a new array
+   consisting of elements; that is, an array of indices into the vertex array.
+   Assuming the original array is a flat array of vertices without anything
+   special in it, no changes would be needed to the vertex array.
+   To draw the object in OpenGL one would need to enable the client state for
+   vertex arrays, then bind the array and use the elements array to draw it.
+   In code:
+       glEnableClientState(GL_VERTEX_ARRAY);
+       glVertexPointer(3, GL_FLOAT, 0, vertex_array);
+       glDrawElements(GL_QUADS, nelements, GL_UNSIGNED_INT, elements);
+       glDisableClientState(GL_VERTEX_ARRAY);
+   where 'vertex_array' is the array containing the vertices, 'nelements' is
+   how many elements to draw, and 'elements' is the array of elements.
+   Another option is to use VBOs, but I'm not sure off hand how to use those.
+
+2. There are four matrix modes; Modelview, Projection, Texture and Color.
+   Modelview is used to transform vertices in a model. That is, they are the
+   model local transformations.
+   Projection is used to transform all vertices into the view space.
+   Texture is used to adjust texture coordinates. It can be used for fancy
+   texture effects, but is often not used.
+   Color adjusts color values. Again, not used very often.
+   
+   In new versions of OpenGL, these modes no longer exist. Instead, the
+   programmer is responsible for managing any matrices they wish to have
+   manually. This allows for any number of matrices the programmer wants.
+
+3. 
 
 
-2.
+4. A single framebuffer can be used either when memory on the card is
+   insufficient for multiple buffers. Because each buffer takes up an amount of
+   space equal to width * height * depth, where depth is the number of bytes
+   per pixel. In RGBA mode, this is 4 bytes. With large resolutions, each
+   buffer can take up a significant amount of space.
+   Double buffering is used when it is important to minimize artifacts due to
+   tearing; that is, when the physical screen updates while OpenGL is drawing
+   into the buffer.
 
+5. A simple improvement to simply solving 'y = mx + b' would be to examine m;
+   in cases where -1.0 <= m <= 1.0 you calculate y for each x value along the
+   line. Otherwise, you solve for the alternate equation 'x = (y - b)/m' and
+   solve for x for each value of y along the line. This gets rid of gaps when
+   the line is 'steep'.
+   
+   A better method is to use Bresenham's algorithm, which is essentially a
+   refinement of the above formula; instead of needing floating point numbers,
+   bresenham's algorithm can be done purely in integers, resulting in
+   (typically) speedups.
+   Bresenham's algorithm is derived from 'y = mx + b', where m = (dy/dx).
+   Muliplying both sides of the equation by 'dx' yields 'dx*y = dy*x + dx*b',
+   which can be rearranged to yield '0 = dy*x - dx*y + dx*b'. If you let
+   'a = dy', 'b = -dx', and 'c = dx*b', you get '0 = ax + by + c'.
+   
+   So, a better approach to drawing a line is to solve for '0 = ax + by + c'.
 
-3.
-
-
-4.
-
-
-5.
-
-
-6.
-
-
+6. There is too much to type, it doesn't look good when I try. Answer here, I
+   can submit paper work if requested.
+   
+   TRyT =
+   [
+    cos(225)  0 -sin(225) (2 - 4cos(225))
+       0      1     0         4
+    -sin(225) 0  cos(225) (1 + 4sin(225))
+       0      0     0         1
+   ]
+   =
+   [
+    -0.7071 0  0.7071  4.8284
+     0      1  0       4
+     0.7071 0 -0.7071 -1.8284
+     0      0  0       1
+   ]
