@@ -16,14 +16,14 @@ namespace cs354 {
     };
     extern class ModelParserState {
     public:
-        ModelParserState(Model *ptr = NULL);
+        ModelParserState();
         ~ModelParserState();
         
         /* Attach a model to this parser state. The parsing functions will
          * then fill this model. This will clear any data left in the parser
          * state.
          */
-        void attach(Model &model);
+        void attach(const char *fname, Model &model);
         
         /* Add a vertex to the current model */
         void vertex(GLfloat coords[3]);
@@ -43,19 +43,33 @@ namespace cs354 {
         void usemtl(const char *mtlname);
         /* Create a new group */
         void group(const char *groupname);
+        
+        /* Material definition functions */
+        void newmtl(const char *mtlname);
+        void ka(GLfloat color[3]);
+        void kd(GLfloat color[3]);
+        void ks(GLfloat color[3]);
+        void ns(GLfloat amount);
+        
+        void endmtlfile();
+        
+        void stats();
+        
     private:
         /* Resolves the given ID. This may cause issues if both tesselation and
          * negative indices are used in the same file */
         int resolve(int id);
         
-        bool negative_id, tesselations;
+        bool negative_id, tesselations, valid_mtl;
         std::vector<FaceArg> face_args;
-        std::string next_mtl;
+        std::string next_mtl, mtl_name;
         Model *ptr;
         PolyGroup *current_group;
         MaterialGroup *current_mgroup;
         
-        std::map<std::string, Material> materials;
+        Material current_mat;
+        std::map<std::string, Material> * materials;
+        std::string filename, libname, basename;
     } model_parser_state;
     
     namespace ModelIO {

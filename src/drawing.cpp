@@ -397,6 +397,14 @@ void draw_free_scene(void) {
         glPushMatrix();
         
         /* This sucks -. - */
+        GLfloat scale = model->getScaleFactor(2.0, 2.0, 2.0);
+        cs354::Translation t = model->getCenteredTranslation();
+        
+        printf("Translating Model: x:%f y:%f z:%f\n", t.x, t.y, t.z);
+        printf("    Scaling Model: %f\n", scale);
+        
+        glTranslatef(t.x, t.y, t.z);
+        glScalef(scale, scale, scale);
         model->draw();
         
         glPopMatrix();

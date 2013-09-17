@@ -2,6 +2,7 @@
 #include "generic/Model.hpp"
 
 #include <cstdio>
+#include <cfloat>
 
 using namespace cs354;
 
@@ -106,7 +107,10 @@ MaterialGroup & PolyGroup::getMatGroup(const std::string &name) {
     return matgroups.back();
 }
 
-Model::Model() { }
+Model::Model() :
+    min_x(FLT_MAX), max_x(-FLT_MAX), min_y(FLT_MAX), max_y(-FLT_MAX),
+    min_z(FLT_MAX), max_z(-FLT_MAX)
+{ }
 Model::~Model() { }
 
 PolyGroup & Model::getGroup(const std::string &name) {
@@ -197,4 +201,22 @@ const Material * Model::getMaterial(const std::string &name) const {
      * object.
      */
     return &(mat_loc->second);
+}
+
+Translation Model::getCenteredTranslation() const {
+    Translation t;
+    t.x = -((min_x + max_x) / 2);
+    t.y = -((min_y + max_y) / 2);
+    t.z = -((min_z + max_z) / 2);
+    return t;
+}
+
+GLfloat Model::getScaleFactor(GLfloat width, GLfloat height,
+                              GLfloat depth) const
+{
+    GLfloat scale_x = width / (max_x - min_x);
+    GLfloat scale_y = height / (max_y - min_y);
+    GLfloat scale_z = height / (max_z - min_z);
+    GLfloat max = (scale_y > scale_z ? scale_y : scale_z);
+    return (scale_x > max ? scale_x : max);
 }

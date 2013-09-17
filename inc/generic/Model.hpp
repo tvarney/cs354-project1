@@ -22,6 +22,9 @@ namespace cs354 {
      */
     class Model;
     
+    struct Translation {
+        GLfloat x, y, z;
+    };
     struct Material {
         static Material Default;
         static GLint loc_ka, loc_kd, loc_ks, loc_tr, loc_ns;
@@ -80,9 +83,16 @@ namespace cs354 {
         void draw();
         
         const Material * getMaterial(const std::string &name) const;
+        Translation getCenteredTranslation() const;
+        GLfloat getScaleFactor(GLfloat width, GLfloat height,
+                               GLfloat depth) const;
         
         friend class ModelParserState;
     protected:
+        GLfloat min_x, max_x;
+        GLfloat min_y, max_y;
+        GLfloat min_z, max_z;
+        
         std::vector<GLfloat> vertices; /*< Triplet */
         std::vector<GLfloat> normals; /*< Triplet */
         std::vector<GLfloat> texture; /*< Pair */
