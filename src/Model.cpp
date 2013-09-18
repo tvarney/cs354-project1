@@ -6,7 +6,15 @@
 
 using namespace cs354;
 
-Material Material::Default;
+Material Material::Default = {
+    {0.5,0.5,0.5},
+    {1.0,1.0,1.0},
+    {1.0,1.0,1.0},
+    1.0, 10.0,
+    1,
+    0,0,0,0,
+    0,0
+};
 GLint Material::loc_ka, Material::loc_kd, Material::loc_ks;
 GLint Material::loc_tr, Material::loc_ns;
 
@@ -19,18 +27,6 @@ void Material::GetLocations(GLuint shader) {
     /* Bind default material to the new shader locations */
     Material::Default.bind();
 }
-
-Material::Material() {
-    ka[0] = ka[1] = ka[2] = 1.0;
-    kd[0] = kd[1] = kd[2] = 0.9;
-    ks[0] = ks[1] = ks[2] = 0.8;
-    tr = 1.0;
-    ns = 0.0;
-    illum = 1;
-    map_ka = map_kd = map_ks = map_d = 0;
-    decal = bump = 0;
-}
-Material::~Material() { }
 
 Material & Material::operator=(const Material &rhs) {
     ka[0] = rhs.ka[0];
@@ -57,7 +53,7 @@ Material & Material::operator=(const Material &rhs) {
     return (*this);
 }
 
-void Material::bind() {
+void Material::bind() const {
     if(Material::loc_ka != -1) {
         glUniform3f(Material::loc_ka, ka[0], ka[1], ka[2]);
     }
@@ -173,6 +169,7 @@ void Model::draw() {
         PolyGroup &group = (*iter);
         mat_end = group.matgroups.end();
         for(miter = group.matgroups.begin(); miter != mat_end; ++miter) {
+            (*miter).mat.bind();
             glDrawElements(GL_TRIANGLES, (*miter).elements.size(),
                            GL_UNSIGNED_INT, &((*miter).elements[0]));
         }

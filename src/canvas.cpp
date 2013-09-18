@@ -304,6 +304,10 @@ void performanceTest(void) {
 /* Handle user input */
 void myKeyHandler(unsigned char ch, int x, int y) {
     switch(ch) {
+    case 'm':
+    case 'M':
+        draw_model = !draw_model;
+        break;
     case 'I':
         _radius += 0.1;
         break;

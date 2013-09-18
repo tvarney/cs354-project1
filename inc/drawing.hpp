@@ -44,6 +44,7 @@ enum DrawMode {
 extern int disp_mode;
 extern cs354::Shader *shader;
 extern cs354::Model *model;
+extern bool draw_model;
 
 /* Styles of drawing glut objects, either solid or wire-frame */
 enum DrawStyle {

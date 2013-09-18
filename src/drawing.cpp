@@ -30,6 +30,7 @@ int disp_style;
 
 cs354::Shader *shader = NULL;
 cs354::Model *model = NULL;
+bool draw_model;
 
 /***********************************************************
  * Begin Cube Data
@@ -366,12 +367,29 @@ void draw_vrml(void) {
 }
 
 /* Draws a freeform scene */
+
+cs354::Material _torus_mat = {
+    {0.5, 0.0, 0.0},
+    {1.0, 1.0, 1.0},
+    {1.0, 0.9, 0.9},
+    1.0, 50.0,
+    1,
+    0,0,0,0,
+    0,0
+};
+cs354::Material _sphere_mat = {
+    {0.0, 0.5, 0.0},
+    {1.0, 1.0, 1.0},
+    {0.5, 0.6, 0.5},
+    1.0, 50.0,
+    1,
+    0,0,0,0,
+    0,0
+};
 void draw_free_scene(void) {
     /* ADD YOUR CODE HERE */
     /* NOTE: Modify or remove the existing code in this func, as necessary */ 
-    GLint mat_ka, mat_kd, mat_ks, mat_shine;
-    mat_ka = mat_kd = mat_ks = mat_shine = -1;
-    if(shader) {
+    if(shader != NULL) {
         shader->use();
         GLuint prog = shader->handle();
         GLint loc = glGetUniformLocation(prog, "Light.Position");
@@ -383,64 +401,35 @@ void draw_free_scene(void) {
         loc = glGetUniformLocation(prog, "Light.Ls");
         glUniform3f(loc, 1.0, 1.0, 1.0);
         
-        mat_ka = glGetUniformLocation(prog, "Material.Ka");
-        glUniform3f(mat_ka, 0.25, 0.25, 0.25);
-        mat_kd = glGetUniformLocation(prog, "Material.Kd");
-        glUniform3f(mat_kd, 0.25, 0.25, 0.25);
-        mat_ks = glGetUniformLocation(prog, "Material.Ks");
-        glUniform3f(mat_ks, 0.35, 0.35, 0.35);
-        mat_shine = glGetUniformLocation(prog, "Material.shine");
-        glUniform1f(mat_shine, 0.10);
+        cs354::Material::GetLocations(prog);
+        cs354::Material::Default.bind();
     }
     
-    if(model) {
+    if(model != NULL && draw_model) {
         glPushMatrix();
         
-        /* This sucks -. - */
         GLfloat scale = model->getScaleFactor(2.0, 2.0, 2.0);
         cs354::Translation t = model->getCenteredTranslation();
-        
-        printf("Translating Model: x:%f y:%f z:%f\n", t.x, t.y, t.z);
-        printf("    Scaling Model: %f\n", scale);
         
         glTranslatef(t.x, t.y, t.z);
         glScalef(scale, scale, scale);
         model->draw();
         
         glPopMatrix();
-        
     }else {
-        /*
-         * Draw a red torus.
-         *
-         * glutWireTorus args: (inner radius, outer radius,
-         * sides per radial section, # of radial sections)
-         */
-        if(mat_ka >= 0) {
-            glUniform3f(mat_ka, 1.0, 0.0, 0.0);
-            glUniform3f(mat_kd, 1.0, 0.0, 0.0);
-            glUniform3f(mat_ks, 1.0, 0.5, 0.5);
+        if(shader != NULL) {
+            _torus_mat.bind();
         }else {
-            glColor3f(1.0, 0.0, 0.0);
+            glColor3f(0.5, 0.0, 0.0);
         }
         glutSolidTorus(0.1, 0.4, 100, 40);
         
-        /*
-         * Draw a green cube at an offset of (0, 1, 0) from the center of
-         * the torus.  Note that the glPushMatrix remembers the current
-         * drawing position (the center of the torus), the glTranslatef
-         * translates the drawing point by and offset, and the
-         * glPopMatrix restores the drawing point to the center of
-         * the torus.
-         */
         glPushMatrix();
         glTranslatef(1.0f, 0.0f, 1.0f);		/* the drawing offset */
-        if(mat_ka >= 0) {
-            glUniform3f(mat_ka, 0.0, 1.0, 0.0);
-            glUniform3f(mat_kd, 0.0, 1.0, 0.0);
-            glUniform3f(mat_ks, 0.5, 1.0, 0.5);
+        if(shader != NULL) {
+            _sphere_mat.bind();
         }else {
-            glColor3f(0.0f, 1.0f, 0.0f);		/* green */
+            glColor3f(0.0f, 0.5f, 0.0f);		/* green */
         }
         glutSolidSphere(1.0f, 100, 100);
         glPopMatrix();

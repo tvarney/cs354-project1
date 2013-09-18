@@ -29,13 +29,9 @@ namespace cs354 {
         static Material Default;
         static GLint loc_ka, loc_kd, loc_ks, loc_tr, loc_ns;
         static void GetLocations(GLuint shader);
-        
-        Material();
-        ~Material();
-        
         Material & operator=(const Material &rhs);
         
-        void bind();
+        void bind() const;
         
         GLfloat ka[3], kd[3], ks[3];
         GLfloat tr, ns;

@@ -59,7 +59,7 @@ void ModelParserState::attach(const char *fname, Model &model) {
     current_mgroup = &(current_group->getMatGroup(""));
     materials = &(model.materials);
     valid_mtl = negative_id = tesselations = false;
-    current_mat = Material();
+    current_mat = Material::Default;
     has_warned_mismatch = false;
 }
 
