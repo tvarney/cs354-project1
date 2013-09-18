@@ -3,6 +3,8 @@
 #define CS354_GENERIC_MODEL_HPP
 
 #include "../common.hpp"
+#include "Material.hpp"
+
 #include <list>
 #include <map>
 #include <stdint.h>
@@ -24,20 +26,6 @@ namespace cs354 {
     
     struct Translation {
         GLfloat x, y, z;
-    };
-    struct Material {
-        static Material Default;
-        static GLint loc_ka, loc_kd, loc_ks, loc_tr, loc_ns;
-        static void GetLocations(GLuint shader);
-        Material & operator=(const Material &rhs);
-        
-        void bind() const;
-        
-        GLfloat ka[3], kd[3], ks[3];
-        GLfloat tr, ns;
-        int illum;
-        GLuint map_ka, map_kd, map_ks, map_d;
-        GLuint decal, bump;
     };
     
     struct MaterialGroup {

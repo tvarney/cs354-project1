@@ -18,6 +18,13 @@
 
 using namespace cs354;
 
+/* Static Interface */
+void Shader::UseDefaultShaders() {
+    glUseProgram(0);
+    MaterialLocations::Unbind();
+}
+
+/* Non-static Interface */
 Shader::Shader() :
     program(0), linked(false)
 { }
@@ -124,6 +131,13 @@ void Shader::link() {
         delete[] infoLog;
         throw std::runtime_error(err.str());
     }
+    
+    locations.loc_ka = this->getUniform("Ka");
+    locations.loc_kd = this->getUniform("Kd");
+    locations.loc_ks = this->getUniform("Ks");
+    locations.loc_tr = this->getUniform("Tr");
+    locations.loc_ns = this->getUniform("Ns");
+    
     linked = true;
 }
 
@@ -131,7 +145,7 @@ void Shader::use() {
     glUseProgram(program);
     /* Update the locations for the current material,
        set them to the default */
-    Material::GetLocations(program);
+    MaterialLocations::Bind(*this);
 }
 
 GLuint Shader::handle() {
@@ -142,6 +156,6 @@ GLint Shader::getUniform(const char *name) {
     return glGetUniformLocation(program, name);
 }
 
-void Shader::UseDefaultShaders() {
-    glUseProgram(0);
+const MaterialLocations & Shader::getLocations() const {
+    return locations;
 }

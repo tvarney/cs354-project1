@@ -400,9 +400,6 @@ void draw_free_scene(void) {
         glUniform3f(loc, 1.0, 1.0, 1.0);
         loc = glGetUniformLocation(prog, "Light.Ls");
         glUniform3f(loc, 1.0, 1.0, 1.0);
-        
-        cs354::Material::GetLocations(prog);
-        cs354::Material::Default.bind();
     }
     
     if(model != NULL && draw_model) {

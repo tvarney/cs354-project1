@@ -7,10 +7,15 @@
 #include <vector>
 #include <exception>
 #include "../common.hpp"
+#include "Material.hpp"
 
 namespace cs354 {
     class Shader {
     public:
+        /* Static interface */
+        static void UseDefaultShaders();
+        
+        /* Non-static interface */
         Shader();
         ~Shader();
         
@@ -19,11 +24,14 @@ namespace cs354 {
         void link();
         void use();
         
+        /* Get opengl handle to shader. */
         GLuint handle();
+        /* Get uniform location from this shader */
         GLint getUniform(const char *name);
-        
-        static void UseDefaultShaders();
+        /* Get MaterialLocations. */
+        const MaterialLocations & getLocations() const;
     private:
+        MaterialLocations locations;
         GLuint program;
         std::vector<GLuint> shaders;
         bool linked;
