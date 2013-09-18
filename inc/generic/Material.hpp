@@ -23,6 +23,8 @@ namespace cs354 {
     class MaterialLocations {
     public:
         /* Static interface */
+        static void Bind(const Shader &shader);
+        static void Unbind();
         static bool Bound();
         static GLint Ka();
         static GLint Kd();
@@ -35,10 +37,7 @@ namespace cs354 {
         ~MaterialLocations();
         
         GLint loc_ka, loc_kd, loc_ks, loc_tr, loc_ns;
-        friend class Shader;
     private:
-        static void Bind(const Shader &shader);
-        static void Unbind();
         static const MaterialLocations * current_locations;
     };
 }
