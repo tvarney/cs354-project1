@@ -25,6 +25,8 @@ namespace cs354 {
         Element v1, v2, v3;
     };
     
+    template <typename T> struct Point;
+    
     /* Template types, because why not make them generic? */
     template <typename T> struct Vector {
         Vector(T vx, T vy, T vz) :
@@ -43,6 +45,9 @@ namespace cs354 {
             vy += rhs.vy;
             vz += rhs.vz;
             return (*this);
+        }
+        Point<T> operator+(const Point<T> &rhs) const {
+            return Point<T>(rhs.x + vx, rhs.y + vy, rhs.z + vz);
         }
         Vector<T> operator-(const Vector<T> &rhs) const {
             return Vector<T>(vx - rhs.vx, vy - rhs.vy, vz - rhs.vz);
@@ -69,6 +74,10 @@ namespace cs354 {
             return (*this);
         }
         
+        Point<T> toPoint() {
+            return Point<T>(vx, vy, vz);
+        }
+        
         T vx, vy, vz;
     };
     
@@ -81,20 +90,22 @@ namespace cs354 {
         { }
         ~Point() { }
         
-        void translate(const Vector<T> &v) {
-            x += v.vx;
-            y += v.vy;
-            z += v.vz;
+        Vector<T> operator-(const Point<T> &rhs) {
+            return Vector<T>(x - rhs.x, y - rhs.y, z - rhs.z);
         }
-        void scale(T scale) {
-            x *= scale;
-            y *= scale;
-            z *= scale;
+        
+        Point<T> operator+(const Vector<T> &rhs) {
+            return Point<T>(x + rhs.vx, y + rhs.vy, z + rhs.vz);
         }
-        void scale(T sX, T sY, T sZ) {
-            x *= sX;
-            y *= sY;
-            z *= sZ;
+        Point<T> & operator+=(const Vector<T> &rhs) {
+            x += rhs.vx;
+            y += rhs.vy;
+            z += rhs.vz;
+            return *this;
+        }
+        
+        Vector<T> toVector() {
+            return Vector<T>(x, y, z);
         }
         
         T x, y, z;

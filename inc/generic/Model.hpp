@@ -41,37 +41,43 @@ namespace cs354 {
         std::vector<GLuint> elements;
     };
     
-    struct PolyGroup {
-        PolyGroup(const std::string &name, const Model *owner);
-        ~PolyGroup();
+    struct Group {
+        Group(const std::string &name);
+        ~Group();
         
-        MaterialGroup & getMatGroup(const char *name);
-        MaterialGroup & getMatGroup(const std::string &name);
+        MaterialGroup & get(const char *name);
+        MaterialGroup & get(const std::string &name);
         
         std::string name;
-        uint32_t flags;
         std::list<MaterialGroup> matgroups;
+    };
+    struct Object {
+        Object(const std::string &name, const Model *owner);
+        ~Object();
+        
+        std::string name;
+        std::list<Group> groups;
         const Model *owner;
     };
     
     class ModelParserState;
+    class WavefrontLoader;
     class Model {
     public:
         Model();
         ~Model();
         
-        PolyGroup & getGroup(const std::string &name);
-        PolyGroup & getGroup(const char *name);
+        Object get(const std::string &name);
+        Object get(const char *name);
         
         void trim();
         void draw();
         
+        const Material * getMaterial(const char *name) const;
         const Material * getMaterial(const std::string &name) const;
-        Translation getCenteredTranslation() const;
-        GLfloat getScaleFactor(GLfloat width, GLfloat height,
-                               GLfloat depth) const;
         
         friend class ModelParserState;
+        friend class WavefrontLoader;
     protected:
         GLfloat min_x, max_x;
         GLfloat min_y, max_y;
@@ -80,7 +86,7 @@ namespace cs354 {
         std::vector<GLfloat> vertices; /*< Triplet */
         std::vector<GLfloat> normals; /*< Triplet */
         std::vector<GLfloat> texture; /*< Pair */
-        std::list<PolyGroup> groups;
+        std::list<Object> groups;
         std::map<std::string, Material> materials;
     };
 }

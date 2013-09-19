@@ -90,7 +90,13 @@ void WavefrontLoader::use(std::map<std::string, Material> & global_mat_map) {
 
 void WavefrontLoader::v(GLfloat coords[3]) {
     vertices.push_back(Vertex(coords));
-    /* We need to update the max and min stats of the model */
+    /* Update stats for scale/transform if requested */
+    max.x = (coords[0] > max.x ? coords[0] : max.x);
+    min.x = (coords[0] < min.x ? coords[0] : min.x);
+    max.y = (coords[1] > max.y ? coords[1] : max.y);
+    min.y = (coords[1] < min.y ? coords[1] : min.y);
+    max.z = (coords[2] > max.z ? coords[2] : max.z);
+    min.z = (coords[2] < min.z ? coords[2] : min.z);
 }
 void WavefrontLoader::vn(GLfloat coords[3]) {
     normals.push_back(Normal(coords));
@@ -173,8 +179,7 @@ void WavefrontLoader::newmtl(const char *mtlname) {
     }
     
     /* Set the new name, then make sure that the material hasn't already been
-     * defined.
-     */
+     * defined. */
     mat.name = mtlname;
     
     if(materials.find(mat.name) != materials.end()) {
@@ -249,8 +254,7 @@ void WavefrontLoader::parse(const char *fname) {
     /* Call the parser; this may throw an exception due to the wf_parse method
      * calling methods of WavefrontLoader that throw exceptions. To be safe,
      * any exceptions are caught, the file is closed, then the exception is
-     * rethrown.
-     */
+     * rethrown. */
     wf_restart(fp);
     try {
         rval = wf_parse();
@@ -263,13 +267,11 @@ void WavefrontLoader::parse(const char *fname) {
     }
     
     /* Close the file - done here so that if the parser returned an error code
-     * we don't leave the file open.
-     */
+     * we don't leave the file open. */
     fclose(fp);
     
     /* Examine the return value. 0 = good, 1 = Invalid Syntax,
-     * 2 = Out of Memory
-     */
+     * 2 = Out of Memory */
     switch(rval) {
     case 0:
         break;
@@ -284,18 +286,54 @@ void WavefrontLoader::parse(const char *fname) {
 }
 
 void WavefrontLoader::scale(GLfloat maxdim) {
+    size_t nvertices = vertices.size();
+    if(nvertices <= 1) {
+        return;
+    }
     
+    GLfloat diffx = max.x - min.x;
+    GLfloat diffy = max.y - min.y;
+    GLfloat diffz = max.z - min.z;
+    GLfloat maxdiff = (diffx > diffy ? diffx : diffy);
+    maxdiff = (maxdiff > diffz ? maxdiff : diffz);
+    GLfloat scalefactor = maxdiff / maxdim;
+    
+    for(size_t i = 0; i < nvertices; ++i) {
+        /* Translate point to vector from origin, scale vector, convert back to
+         * point. */
+        vertices[i] = (vertices[i].toVector() * scalefactor).toPoint();
+    }
 }
 void WavefrontLoader::translate(Vertex origin) {
-
+    size_t nvertices = vertices.size();
+    if(nvertices <= 1) {
+        return;
+    }
+    
+    /* Compute the translation required to center around origin */
+    Vector<GLfloat> translation(-(max.x-min.x),-(max.y-min.y),-(max.z-min.z));
+    /* Get vector to origin point, add it to our calculated translation */
+    /*TODO: Check my math. I think this results in the correct vector */
+    translation += origin.toVector();
+    
+    for(size_t i = 0; i < nvertices; ++i) {
+        vertices[i] += translation;
+    }
 }
 
 Model * WavefrontLoader::cache_to_model() {
-    Model * model = NULL;
+    Model * model = new Model();
+    
+    GLuint current_element = 0;
+    /* Our map to map distinct elements, allows us to not put redundant
+     * elements in our model arrays. */
+    std::map<Element, GLuint> elements;
     
     return model;
 }
 
+/*NOTE: could be renamed to 'reset', as that encompasses it's function better
+ */
 void WavefrontLoader::clear() {
     /* This should clean up each sub-map */
     objects.clear();

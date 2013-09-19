@@ -387,8 +387,6 @@ cs354::Material _sphere_mat = {
     0,0
 };
 void draw_free_scene(void) {
-    /* ADD YOUR CODE HERE */
-    /* NOTE: Modify or remove the existing code in this func, as necessary */ 
     if(shader != NULL) {
         shader->use();
         GLuint prog = shader->handle();
@@ -405,11 +403,6 @@ void draw_free_scene(void) {
     if(model != NULL && draw_model) {
         glPushMatrix();
         
-        GLfloat scale = model->getScaleFactor(2.0, 2.0, 2.0);
-        cs354::Translation t = model->getCenteredTranslation();
-        
-        glTranslatef(t.x, t.y, t.z);
-        glScalef(scale, scale, scale);
         model->draw();
         
         glPopMatrix();
@@ -422,11 +415,11 @@ void draw_free_scene(void) {
         glutSolidTorus(0.1, 0.4, 100, 40);
         
         glPushMatrix();
-        glTranslatef(1.0f, 0.0f, 1.0f);		/* the drawing offset */
+        glTranslatef(1.0f, 0.0f, 1.0f);
         if(shader != NULL) {
             _sphere_mat.bind();
         }else {
-            glColor3f(0.0f, 0.5f, 0.0f);		/* green */
+            glColor3f(0.0f, 0.5f, 0.0f);
         }
         glutSolidSphere(1.0f, 100, 100);
         glPopMatrix();
@@ -438,50 +431,35 @@ void draw_free_scene(void) {
 
 
 /* Prints to stdout the current display mode */
+static const char * _disp_modes[] = {
+    "Cube using glut",
+    "Cube using quadrilaterals",
+    "Cube using quadrilateral arrays",
+    "Cone using glut",
+    "Cone using triangles",
+    "Cone using triangle arrays",
+    "Cone using calculated triangles",
+    "VRML objects",
+    "Freeform scene"
+};
 void print_disp_mode( void ) {
-    switch (disp_mode) {
-    case DM_CUBE_GLUT:
-        printf("Display Mode: Cube using glut\n");
-        break;
-    case DM_CUBE_QUAD:
-        printf("Display Mode: Cube using quadrilaterals\n");
-        break;
-    case DM_CUBE_QUAD_ARRAYS:
-        printf("Display Mode: Cube using quadrilateral arrays\n");
-        break;
-    case DM_CONE_GLUT:
-        printf("Display Mode: Cone using glut\n");
-        break;
-    case DM_CONE_TRI:
-        printf("Display Mode: Cone using triangles\n");
-        break;
-    case DM_CONE_TRI_ARRAYS:
-        printf("Display Mode: Cone using triangle arrays\n");
-        break;
-    case DM_CONE_TRI_CALC:
-        printf("Display Mode: Cone using calculated triangles\n");
-        break;
-    case DM_VRML:
-        printf("Display Mode: VRML objects\n");
-        break;
-    case DM_FREE_SCENE:
-        printf("Display Mode: Freeform scene\n");
-        break;
-    default:
-        printf("Warning: unknown display mode\n");
-        break;
+    if(disp_mode < 0 || disp_mode > 8) {
+        printf("Warning: unknown display mode\n");        
+    }else {
+        printf("Display Mode: %s\n", _disp_modes[disp_mode]);
     }
 }
 
-
 /* Prints to stdout the current display style */
+static const char * _disp_styles[] = {
+    "solid (for glut modes only)",
+    "wire (for glut modes only)"
+};
 void print_disp_style( void ) {
-    if (disp_style == DS_SOLID) {
-        printf("Display Style: solid (for glut modes only)\n");
-    } else if (disp_style == DS_WIRE) {  
-        printf("Display Style: wire (for glut modes only)\n");
-    } else {
+    if(disp_style < 0 || disp_style > 1) {
         printf("Warning: unknown display style\n");
+    }else {
+        printf("Display Style: %s\n", _disp_styles[disp_style]);
     }
 }
 
