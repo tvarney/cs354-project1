@@ -23,6 +23,7 @@ namespace cs354 {
         int v, vt, vn;
     };
     struct Vertex {
+        Vertex(GLfloat x, GLfloat y, GLfloat z);
         Vertex(GLfloat args[3]);
         ~Vertex();
         
@@ -74,10 +75,11 @@ namespace cs354 {
                         bool global_mats = false);
         ~WavefrontLoader();
         
-        /* Loads a model from the given file. If fp == NULL, then the function
-         * will attempt to open the file given by fname.
-         */
-        Model * load(const char *fname, FILE *fp = NULL);
+        /* Loads a model from the given file. */
+        Model * load(const char *fname);
+        Model * load(const char *fname, Vertex origin);
+        Model * load(const char *fname, GLfloat max_dim);
+        Model * load(const char *fname, Vertex origin, GLfloat max_dim);
         
         /* Set global Material table */
         void use(std::map<std::string, Material> & global_mat_map);
@@ -99,8 +101,21 @@ namespace cs354 {
         void ks(GLfloat color[3]);
         void ns(GLfloat amount);
         void tr(GLfloat amount);
+        
+        /* Unsupported Features */
+        void vp(GLfloat coord[3]);
+        void map_ka(const char *kamap);
+        void map_kd(const char *kdmap);
+        void map_ks(const char *ksmap);
+        void map_tr(const char *trmap);
+        void bump(const char *bumpmap);
+        void decal(const char *decal);
     private:
         /* Helper function to clear out data */
+        void parse(const char *fname);
+        Model * cache_to_model();
+        void scale(GLfloat maxdim);
+        void translate(Vertex origin);
         void clear();
         void log(const char *msg, ...);
         void resolve(Element &e);
@@ -108,10 +123,8 @@ namespace cs354 {
         void newGroup(const std::string &name);
         void newMatGroup(const std::string &name);
         
-        /* The file being loaded. The loader is not thread safe; a seperate
-         * instance is required for each thread.
-         */
-        std::string fname;
+        /* File information */
+        std::string fname, libname, basename;
         FILE *fp;
         
         /* Logging file pointer */
@@ -122,6 +135,12 @@ namespace cs354 {
         std::vector<Vertex> vertices;
         std::vector<TextureCoord> texCoords;
         std::vector<Normal> normals;
+        
+        /* Useful stats for calculating bounding box and centering transforms
+         */
+        struct {
+            GLfloat x, y, z;
+        } max, min;
         
         /* The model as loaded from the .obj file. This isn't guaranteed to
          * be valid */
@@ -144,7 +163,11 @@ namespace cs354 {
         } next;
         
         /* Local Material buffer, used when reading material files */
-        Material matdef;
+        struct {
+            bool valid;
+            std::string name;
+            Material def;
+        } mat;
         
         /* Material behavior flags.
          * keepMaterials will cause the Loader to save materials between runs.
@@ -159,7 +182,6 @@ namespace cs354 {
             LoaderObject *object;
         } current;
     };
-    extern WavefrontLoader ModelLoader;
 }
 
 #endif

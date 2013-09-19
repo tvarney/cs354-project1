@@ -2,6 +2,7 @@
 #include "generic/WavefrontLoader.hpp"
 #include "generic/Model.hpp"
 
+#include <cfloat>
 #include <climits>
 #include <cstdarg>
 #include <cstdio>
@@ -22,10 +23,6 @@ extern void mat_restart(FILE *fp);
 /**************************************************/
 /* Defines to make my life easier */
 #define RuntimeError(msg) std::runtime_error(std::string(msg))
-#define COPY_TRIPLE(to, from) \
-    (to)[0] = (from)[0];      \
-    (to)[1] = (from)[1];      \
-    (to)[2] = (from)[2]
 /**************************************************/
 
 /**************************************************/
@@ -36,6 +33,9 @@ Element::~Element() { }
 /**************************************************/
 
 /**************************************************/
+Vertex::Vertex(GLfloat x, GLfloat y, GLfloat z) :
+    x(x), y(y), z(z)
+{ }
 Vertex::Vertex(GLfloat args[3]) :
     x(args[0]), y(args[1]), z(args[2])
 { }
@@ -87,56 +87,27 @@ WavefrontLoader::WavefrontLoader(bool keep_materials, bool global_mats) :
 { }
 WavefrontLoader::~WavefrontLoader() { }
 
-Model * WavefrontLoader::load(const char *fname, FILE *fp) {
-    Model *model = NULL;
-    clear();
-    
-    next.hasMtl = next.hasGroup = next.hasObject = false;
-    
-    /* Open the file if we need to. 'openfile' is defined to allow us to close
-     * the file when we are done if we need to (as in, if we opened the file
-     * in this method).
-     */
-    bool openfile = (fp == NULL);
-    if(openfile) {
-        fp = fopen(fname, "r");
-        if(!fp) {
-            /* Couldn't open the file, throw an exception to abort. */
-            throw RuntimeError("Could not open file");
-        }
-    }
-    
-    /* Call the parser; this may throw an exception due to the wf_parse method
-     * calling methods of WavefrontLoader that throw exceptions.
-     */
-    wf_restart(fp);
-    int rval = wf_parse();
-    
-    /* Examine the return value. 0 = good, 1 = Invalid Syntax,
-     * 2 = Out of Memory
-     */
-    switch(rval) {
-    case 0:
-        break;
-    case 1:
-        throw RuntimeError("Invalid Syntax in wavefront .obj file.");
-    case 2:
-        throw RuntimeError("Parser exhausted memory.");
-    default:
-        throw RuntimeError("Unknown error in parser.");
-        break;
-    }
-    
-    /* Close the file since we are done with it. Here is why we saved openfile
-     */
-    if(openfile) {
-        fclose(fp);
-    }
-    
-    /* TODO: Convert cached values into a valid model. */
-    
-    clear();
-    return model;
+Model * WavefrontLoader::load(const char *fname) {
+    parse(fname);
+    return cache_to_model();
+}
+Model * WavefrontLoader::load(const char *fname, GLfloat max_dim) {
+    parse(fname);
+    scale(max_dim);
+    return cache_to_model();
+}
+Model * WavefrontLoader::load(const char *fname, Vertex origin) {
+    parse(fname);
+    translate(origin);
+    return cache_to_model();
+}
+Model * WavefrontLoader::load(const char *fname, Vertex origin,
+                              GLfloat max_dim)
+{
+    parse(fname);
+    scale(max_dim);
+    translate(origin);
+    return cache_to_model();
 }
 
 void WavefrontLoader::use(std::map<std::string, Material> & global_mat_map) {
@@ -148,6 +119,7 @@ void WavefrontLoader::use(std::map<std::string, Material> & global_mat_map) {
 
 void WavefrontLoader::v(GLfloat coords[3]) {
     vertices.push_back(Vertex(coords));
+    /* We need to update the max and min stats of the model */
 }
 void WavefrontLoader::vn(GLfloat coords[3]) {
     normals.push_back(Normal(coords));
@@ -158,11 +130,11 @@ void WavefrontLoader::vt(GLfloat coords[3]) {
 void WavefrontLoader::f() {
     /* Resolve any outstanding object, group or material requests */
     if(current.object == NULL || next.hasObject) {
-        newObject(next.hasObject ? next.object : std::string(""));
+        newObject(next.object);
     }else if(current.group == NULL || next.hasGroup) {
-        newGroup(next.hasGroup ? next.group : std::string(""));
+        newGroup(next.group);
     }else if(current.mgroup == NULL || next.hasMtl) {
-        newMatGroup(next.hasMtl ? next.mtl : std::string(""));
+        newMatGroup(next.mtl);
     }
     
     size_t fs_size = faceStack.size();
@@ -196,70 +168,141 @@ void WavefrontLoader::mtllib(const char *libname) {
     
 }
 void WavefrontLoader::usemtl(const char *mtlname) {
-    std::string name = mtlname;
-    /* Check if the material requested has been loaded
-     * Invalid references will still create material groups, they will just
-     * use the default material.
-     * "" is used to represent the default material, which skips the checks
-     * for the material in the material maps.
-     */
-    std::map<std::string, Material>::iterator miter;
-    if(std::strcmp(mtlname, "") != 0) {
-        miter = materials.find(name);
-        if(miter == materials.end()) {
-            if(globalMaterialMap != NULL) {
-                miter = (*globalMaterialMap).find(name);
-                if(miter == (*globalMaterialMap).end()) {
-                    log("Invalid material reference: %s\n", mtlname);
-                }
-            }else {
-                log("Invalid material reference: %s\n", mtlname);
-            }
-        }
+    if(next.hasMtl) {
+        log("Multiple Material definition: Overwriting \"%s\" with \"%s\"\n",
+            next.mtl.c_str(), mtlname);
     }
     
-    /* Check if the material group already exists */
-    std::map<std::string, LoaderMatGroup>::iterator iter;
-    iter = current.group->material_groups.find(name);
-    if(iter != current.group->material_groups.end()) {
-        /* Set current material group to existing group */
-        current.mgroup = &(iter->second);
-    }else {
-        /* Create new group, set the pointer to it */
-        current.group->material_groups[name] = LoaderMatGroup(name);
-        current.mgroup = &(current.group->material_groups[name]);
-    }
+    next.mtl = mtlname;
+    next.hasMtl = true;
 }
 void WavefrontLoader::g(const char *groupname) {
+    if(next.hasGroup) {
+        log("Multiple Group definition: Overwriting \"%s\" with \"%s\"\n",
+            next.group.c_str(), groupname);
+    }
     
+    next.group = groupname;
+    next.hasGroup = true;
 }
 void WavefrontLoader::o(const char *objectname) {
-    current.group = NULL;
-    current.mgroup = NULL;
+    if(next.hasObject) {
+        log("Multiple Object definition: Overwriting \"%\" with \"%s\"\n",
+            next.object.c_str(), objectname);
+    }
+    
+    next.object = objectname;
+    next.hasObject = true;
 }
 
 /* Material commands */
 void WavefrontLoader::newmtl(const char *mtlname) {
+    if(mat.valid) {
+        
+    }
     
+    mat.name = mtlname;
+    mat.def = Material::Default;
+    mat.valid = true;
 }
+static const char _inv_mat_ref[] =
+    "Attempt to set %s without material reference.\n";
 void WavefrontLoader::ka(GLfloat color[3]) {
-    
+    if(mat.valid) {
+        mat.def.ka[0] = color[0];
+        mat.def.ka[1] = color[1];
+        mat.def.ka[2] = color[2];
+    }else {
+        log(_inv_mat_ref, "Ka");
+    }
 }
 void WavefrontLoader::kd(GLfloat color[3]) {
-    
+    if(mat.valid) {
+        mat.def.kd[0] = color[0];
+        mat.def.kd[1] = color[1];
+        mat.def.kd[2] = color[2];
+    }else {
+        log(_inv_mat_ref, "Kd");
+    }
 }
 void WavefrontLoader::ks(GLfloat color[3]) {
-    
+    if(mat.valid) {
+        mat.def.ks[0] = color[0];
+        mat.def.ks[1] = color[1];
+        mat.def.ks[2] = color[2];
+    }else {
+        log(_inv_mat_ref, "Ks");
+    }
 }
 void WavefrontLoader::ns(GLfloat amount) {
-    
+    if(mat.valid) {
+        mat.def.ns = amount;
+    }else {
+        log(_inv_mat_ref, "Ns");
+    }
 }
 void WavefrontLoader::tr(GLfloat amount) {
-    
+    if(mat.valid) {
+        mat.def.tr = amount;
+    }else {
+        log(_inv_mat_ref, "Tr");
+    }
 }
 
 /**************************************************/
 /* Private methods of WavefrontLoader */
+void WavefrontLoader::parse(const char *fname) {
+    clear();
+    
+    
+    /* Open the file if we need to. 'openfile' is defined to allow us to close
+     * the file when we are done if we need to (as in, if we opened the file
+     * in this method).
+     */
+    FILE *fp = fopen(fname, "r");
+    if(!fp) {
+        /* Couldn't open the file, throw an exception to abort. */
+        throw RuntimeError("Could not open file");
+    }
+    
+    /* Call the parser; this may throw an exception due to the wf_parse method
+     * calling methods of WavefrontLoader that throw exceptions.
+     */
+    wf_restart(fp);
+    int rval = wf_parse();
+    
+    /* Examine the return value. 0 = good, 1 = Invalid Syntax,
+     * 2 = Out of Memory
+     */
+    switch(rval) {
+    case 0:
+        break;
+    case 1:
+        throw RuntimeError("Invalid Syntax in wavefront .obj file.");
+    case 2:
+        throw RuntimeError("Parser exhausted memory.");
+    default:
+        throw RuntimeError("Unknown error in parser.");
+        break;
+    }
+    
+    /* Close the file since we are done with it. */
+    fclose(fp);
+    fp = NULL;
+}
+
+void WavefrontLoader::scale(GLfloat maxdim) {
+
+}
+void WavefrontLoader::translate(Vertex origin) {
+
+}
+
+Model * WavefrontLoader::cache_to_model() {
+    Model * model = NULL;
+    
+    return model;
+}
 
 void WavefrontLoader::clear() {
     /* This should clean up each sub-map */
@@ -274,7 +317,14 @@ void WavefrontLoader::clear() {
     current.object = NULL;
     current.group = NULL;
     current.mgroup = NULL;
-    matdef = Material::Default;
+    
+    mat.valid = false;
+    mat.name = "";
+    max.x = max.y = max.z = -FLT_MAX;
+    min.x = min.y = min.z = FLT_MAX;
+    
+    next.hasMtl = next.hasGroup = next.hasObject = false;
+    next.mtl = next.group = next.object = "";
 }
 
 void WavefrontLoader::log(const char *msg, ...) {
@@ -323,7 +373,7 @@ void WavefrontLoader::newObject(const std::string &name) {
         current.object = &(iter->second);
     }
     
-    newGroup(next.hasGroup ? next.group : std::string(""));
+    newGroup(next.group);
     next.hasObject = false;
 }
 
@@ -338,19 +388,42 @@ void WavefrontLoader::newGroup(const std::string &name) {
         current.group = &(iter->second);
     }
     
-    newMatGroup(next.hasMtl ? next.mtl : std::string(""));
+    newMatGroup(next.mtl);
     next.hasGroup = false;
 }
 
 void WavefrontLoader::newMatGroup(const std::string &name) {
-    std::map<std::string, LoaderMatGroup>::iterator iter;
+    /* Check if the material requested has been loaded
+     * Invalid references will still create material groups, they will just
+     * use the default material.
+     * "" is used to represent the default material, which skips the checks
+     * for the material in the material maps.
+     */
+    std::map<std::string, Material>::iterator miter;
+    if(std::strcmp(name.c_str(), "") != 0) {
+        miter = materials.find(name);
+        if(miter == materials.end()) {
+            if(globalMaterialMap != NULL) {
+                miter = (*globalMaterialMap).find(name);
+                if(miter == (*globalMaterialMap).end()) {
+                    log("Invalid material reference: %s\n", name.c_str());
+                }
+            }else {
+                log("Invalid material reference: %s\n", name.c_str());
+            }
+        }
+    }
     
+    /* Check if the material group already exists */
+    std::map<std::string, LoaderMatGroup>::iterator iter;
     iter = current.group->material_groups.find(name);
-    if(iter == current.group->material_groups.end()) {
+    if(iter != current.group->material_groups.end()) {
+        /* Set current material group to existing group */
+        current.mgroup = &(iter->second);
+    }else {
+        /* Create new group, set the pointer to it */
         current.group->material_groups[name] = LoaderMatGroup(name);
         current.mgroup = &(current.group->material_groups[name]);
-    }else {
-        current.mgroup = &(iter->second);
     }
     
     next.hasMtl = false;
