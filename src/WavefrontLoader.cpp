@@ -23,37 +23,8 @@ extern void mat_restart(FILE *fp);
 /**************************************************/
 /* Defines to make my life easier */
 #define RuntimeError(msg) std::runtime_error(std::string(msg))
-/**************************************************/
-
-/**************************************************/
-Element::Element(int args[3]) :
-    v(args[0]), vt(args[1]), vn(args[2])
-{ }
-Element::~Element() { }
-/**************************************************/
-
-/**************************************************/
-Vertex::Vertex(GLfloat x, GLfloat y, GLfloat z) :
-    x(x), y(y), z(z)
-{ }
-Vertex::Vertex(GLfloat args[3]) :
-    x(args[0]), y(args[1]), z(args[2])
-{ }
-Vertex::~Vertex() { }
-/**************************************************/
-
-/**************************************************/
-TextureCoord::TextureCoord(GLfloat args[3]) :
-    u(args[0]), v(args[1]), w(args[2])
-{ }
-TextureCoord::~TextureCoord() { }
-/**************************************************/
-
-/**************************************************/
-Normal::Normal(GLfloat args[3]) :
-    xn(args[0]), yn(args[1]), zn(args[2])
-{ }
-Normal::~Normal() { }
+static const char _inv_mat_ref[] =
+    "Attempt to set %s without material reference.\n";
 /**************************************************/
 
 /**************************************************/
@@ -198,15 +169,29 @@ void WavefrontLoader::o(const char *objectname) {
 /* Material commands */
 void WavefrontLoader::newmtl(const char *mtlname) {
     if(mat.valid) {
-        
+        materials[mat.name] = mat.def;
     }
     
+    /* Set the new name, then make sure that the material hasn't already been
+     * defined.
+     */
     mat.name = mtlname;
-    mat.def = Material::Default;
+    
+    if(materials.find(mat.name) != materials.end()) {
+        log("Redefinition of material \"%s\"\n", mtlname);
+        mat.def = materials[mat.name];
+    }else if(globalMaterialMap != NULL && globalMaterials &&
+             globalMaterialMap->find(mat.name) != globalMaterialMap->end())
+    {
+        log("Redefinition of material \"%s\"in global material map.\n",
+            mtlname);
+        mat.def = globalMaterialMap->find(mat.name)->second;
+    }else {
+        mat.def = Material::Default;
+    }
     mat.valid = true;
 }
-static const char _inv_mat_ref[] =
-    "Attempt to set %s without material reference.\n";
+
 void WavefrontLoader::ka(GLfloat color[3]) {
     if(mat.valid) {
         mat.def.ka[0] = color[0];
@@ -252,13 +237,9 @@ void WavefrontLoader::tr(GLfloat amount) {
 /**************************************************/
 /* Private methods of WavefrontLoader */
 void WavefrontLoader::parse(const char *fname) {
+    int rval;
     clear();
     
-    
-    /* Open the file if we need to. 'openfile' is defined to allow us to close
-     * the file when we are done if we need to (as in, if we opened the file
-     * in this method).
-     */
     FILE *fp = fopen(fname, "r");
     if(!fp) {
         /* Couldn't open the file, throw an exception to abort. */
@@ -266,10 +247,25 @@ void WavefrontLoader::parse(const char *fname) {
     }
     
     /* Call the parser; this may throw an exception due to the wf_parse method
-     * calling methods of WavefrontLoader that throw exceptions.
+     * calling methods of WavefrontLoader that throw exceptions. To be safe,
+     * any exceptions are caught, the file is closed, then the exception is
+     * rethrown.
      */
     wf_restart(fp);
-    int rval = wf_parse();
+    try {
+        rval = wf_parse();
+    }catch(std::runtime_error &re) {
+        fclose(fp);
+        throw re;
+    }catch(std::exception &e) {
+        fclose(fp);
+        throw e;
+    }
+    
+    /* Close the file - done here so that if the parser returned an error code
+     * we don't leave the file open.
+     */
+    fclose(fp);
     
     /* Examine the return value. 0 = good, 1 = Invalid Syntax,
      * 2 = Out of Memory
@@ -285,14 +281,10 @@ void WavefrontLoader::parse(const char *fname) {
         throw RuntimeError("Unknown error in parser.");
         break;
     }
-    
-    /* Close the file since we are done with it. */
-    fclose(fp);
-    fp = NULL;
 }
 
 void WavefrontLoader::scale(GLfloat maxdim) {
-
+    
 }
 void WavefrontLoader::translate(Vertex origin) {
 

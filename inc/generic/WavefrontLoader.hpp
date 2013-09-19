@@ -11,39 +11,12 @@
 #include <string>
 #include <vector>
 
+#include "Geometry.hpp"
 #include "Material.hpp"
 
 namespace cs354 {
     class Model;
     
-    struct Element {
-        Element(int args[3]);
-        ~Element();
-        
-        int v, vt, vn;
-    };
-    struct Vertex {
-        Vertex(GLfloat x, GLfloat y, GLfloat z);
-        Vertex(GLfloat args[3]);
-        ~Vertex();
-        
-        GLfloat x, y, z;
-    };
-    struct TextureCoord {
-        TextureCoord(GLfloat args[3]);
-        ~TextureCoord();
-        GLfloat u, v, w;
-    };
-    struct Normal {
-        Normal(GLfloat args[3]);
-        ~Normal();
-        
-        GLfloat xn, yn, zn;
-    };
-    struct Triangle {
-        Element v1, v2, v3;
-    };
-
     struct LoaderMatGroup {
         LoaderMatGroup();
         LoaderMatGroup(const std::string &mtlname);
