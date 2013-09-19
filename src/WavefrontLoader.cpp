@@ -19,10 +19,27 @@ extern void wf_restart(FILE *fp);
 extern int mat_parse(void);
 extern void mat_restart(FILE *fp);
 /**************************************************/
-
+/* Symbols for the bison generated parsers */
+WavefrontLoader * cs354::loader;
 /**************************************************/
 /* Defines to make my life easier */
 #define RuntimeError(msg) std::runtime_error(std::string(msg))
+#define Push_Element(element, modelptr, verts, inv_tex, tex, inv_norm, norms) \
+    do {                                                                \
+        (model)->vertices.push_back((verts)[(element).v].x);            \
+        (model)->vertices.push_back((verts)[(element).v].y);            \
+        (model)->vertices.push_back((verts)[(element).v].z);            \
+        if(!(inv_tex)) {                                                \
+            (model)->texture.push_back((tex)[(element).vt].x);          \
+            (model)->texture.push_back((tex)[(element).vt].y);          \
+        }                                                               \
+        if(!(inv_norm)) {                                               \
+            (model)->normals.push_back((norms)[(element).vn].vx);       \
+            (model)->normals.push_back((norms)[(element).vn].vy);       \
+            (model)->normals.push_back((norms)[(element).vn].vz);       \
+        }                                                               \
+    } while(false)
+
 static const char _inv_mat_ref[] =
     "Attempt to set %s without material reference.\n";
 /**************************************************/
@@ -59,15 +76,18 @@ WavefrontLoader::WavefrontLoader(bool keep_materials, bool global_mats) :
 WavefrontLoader::~WavefrontLoader() { }
 
 Model * WavefrontLoader::load(const char *fname) {
+    loader = this;
     parse(fname);
     return cache_to_model();
 }
 Model * WavefrontLoader::load(const char *fname, GLfloat max_dim) {
+    loader = this;
     parse(fname);
     scale(max_dim);
     return cache_to_model();
 }
 Model * WavefrontLoader::load(const char *fname, Vertex origin) {
+    loader = this;
     parse(fname);
     translate(origin);
     return cache_to_model();
@@ -75,6 +95,7 @@ Model * WavefrontLoader::load(const char *fname, Vertex origin) {
 Model * WavefrontLoader::load(const char *fname, Vertex origin,
                               GLfloat max_dim)
 {
+    loader = this;
     parse(fname);
     scale(max_dim);
     translate(origin);
@@ -135,14 +156,51 @@ void WavefrontLoader::f() {
     if(fs_size > 3) {
         log("face tesselated into %llu triangles\n", fs_size - 2);
     }
+    faceStack.clear();
 }
 void WavefrontLoader::fArg(int args[3]) {
     faceStack.push_back(Element(args));
 }
-void WavefrontLoader::mtllib(const char *libname) {
+void WavefrontLoader::mtllib(const char *lib) {
     /* Here is the fun part, we call a new parser from within another parser */
+    libname = basename + std::string("/") + std::string(lib);
+    log("Loading materials from %s\n", libname.c_str());
+    FILE *libfp = fopen(libname.c_str(), "r");
+    if(!libfp) {
+        log("Could not open mtllib %s\n", libname.c_str());
+        return;
+    }
     
+    mat_restart(libfp);
+    int rval;
+    try {
+        rval = mat_parse();
+    }catch(std::exception &e) {
+        log("Could not parse %s; %s\n", libname.c_str(), e.what());
+        fclose(libfp);
+        throw e;
+    }
     
+    fclose(libfp);
+    
+    if(mat.valid) {
+        materials[mat.name] = mat.def;
+    }
+    
+    switch(rval) {
+    case 0:
+        break;
+    case 1:
+        log("Syntax error while parsing %s\n", libname.c_str());
+        throw RuntimeError("Syntax Error");
+    case 2:
+        log("Material parser exhausted memory while parsing %s\n",
+            libname.c_str());
+        throw RuntimeError("Parser exhausted memory");
+    default:
+        log("Unknown error parsing %s\n", libname.c_str());
+        throw RuntimeError("Unknown Error");
+    }
 }
 void WavefrontLoader::usemtl(const char *mtlname) {
     if(next.hasMtl) {
@@ -241,15 +299,26 @@ void WavefrontLoader::tr(GLfloat amount) {
 
 /**************************************************/
 /* Private methods of WavefrontLoader */
-void WavefrontLoader::parse(const char *fname) {
+void WavefrontLoader::parse(const char *file_name) {
     int rval;
     clear();
     
-    FILE *fp = fopen(fname, "r");
+    FILE *fp = fopen(file_name, "r");
     if(!fp) {
         /* Couldn't open the file, throw an exception to abort. */
         throw RuntimeError("Could not open file");
     }
+    
+    fname = file_name;
+    size_t last_sep = fname.rfind("/");
+    if(last_sep == std::string::npos) {
+        basename = ".";
+    }else {
+        basename = std::string(fname, 0, last_sep);
+    }
+    
+    log("Loading from file %s, basename:\"%s\"\n", fname.c_str(),
+        basename.c_str());
     
     /* Call the parser; this may throw an exception due to the wf_parse method
      * calling methods of WavefrontLoader that throw exceptions. To be safe,
@@ -324,10 +393,100 @@ void WavefrontLoader::translate(Vertex origin) {
 Model * WavefrontLoader::cache_to_model() {
     Model * model = new Model();
     
-    GLuint current_element = 0;
+    /* Copy model materials over to the newly created model */
+    model->materials = materials;
+    
+    GLuint current_element = 0, elementid;
     /* Our map to map distinct elements, allows us to not put redundant
      * elements in our model arrays. */
     std::map<Element, GLuint> elements;
+    
+    /* Copy elements, ensuring that each element triple corresponds to a single
+     * index in the model. This is...annoying to do. */
+    std::map<std::string, LoaderObject>::iterator lobj_iter;
+    std::map<std::string, LoaderGroup>::iterator lgroup_iter, lgroup_end;
+    std::map<std::string, LoaderMatGroup>::iterator lmgroup_iter, lmgroup_end;
+    std::map<Element, GLuint>::iterator element_iter;
+    for(lobj_iter = objects.begin(); lobj_iter != objects.end(); ++lobj_iter) {
+        /* Get current LoaderObject and create a model object to correspond */
+        LoaderObject &lobj = lobj_iter->second;
+        Object &object = model->get(lobj_iter->first);
+        
+        lgroup_end = lobj.groups.end();
+        lgroup_iter = lobj.groups.begin();
+        for(; lgroup_iter != lgroup_end; ++lgroup_iter) {
+            /* Get current LoaderGroup and create model group to correspond */
+            LoaderGroup &lgroup = lgroup_iter->second;
+            Group &group = object.get(lgroup_iter->first);
+            
+            lmgroup_end = lgroup.material_groups.end();
+            lmgroup_iter = lgroup.material_groups.begin();
+            for(; lmgroup_iter != lmgroup_end; ++lmgroup_iter) {
+                /* Get current Material Group, create Model Material Group */
+                LoaderMatGroup &lmgroup = lmgroup_iter->second;
+                MaterialGroup &mgroup = group.get(lmgroup.mtlname);
+                
+                size_t ntri = lmgroup.faces.size();
+                for(size_t i = 0; i < ntri; ++i) {
+                    Triangle &tri = lmgroup.faces[i];
+                    /* Do the delayed invalidation requested by resolve() */
+                    if(invalidate_texcoords) {
+                        tri.v1.vt = -1;
+                        tri.v2.vt = -1;
+                        tri.v3.vt = -1;
+                    }
+                    if(invalidate_normals) {
+                        tri.v1.vn = -1;
+                        tri.v2.vn = -1;
+                        tri.v3.vn = -1;
+                    }
+                    
+                    element_iter = elements.find(tri.v1);
+                    if(element_iter == elements.end()) {
+                        elementid = current_element;
+                        current_element++;
+                        elements[tri.v1] = elementid;
+                        
+                        Push_Element(tri.v1, model, vertices,
+                                     invalidate_texcoords, texCoords,
+                                     invalidate_normals, normals);
+                    }else {
+                        elementid = element_iter->second;
+                    }
+                    /* yeaaaah */
+                    mgroup.elements.push_back(elementid);
+                    
+                    element_iter = elements.find(tri.v2);
+                    if(element_iter == elements.end()) {
+                        elementid = current_element;
+                        current_element++;
+                        elements[tri.v2] = elementid;
+                        
+                        Push_Element(tri.v2, model, vertices,
+                                     invalidate_texcoords, texCoords,
+                                     invalidate_normals, normals);
+                    }else {
+                        elementid = element_iter->second;
+                    }
+                    mgroup.elements.push_back(elementid);
+                    
+                    element_iter = elements.find(tri.v3);
+                    if(element_iter == elements.end()) {
+                        elementid = current_element;
+                        current_element++;
+                        elements[tri.v3] = elementid;
+                        
+                        Push_Element(tri.v3, model, vertices,
+                                     invalidate_texcoords, texCoords,
+                                     invalidate_normals, normals);
+                    }else {
+                        elementid = element_iter->second;
+                    }
+                    mgroup.elements.push_back(elementid);
+                }
+            }
+        }
+    }
     
     return model;
 }
@@ -355,6 +514,8 @@ void WavefrontLoader::clear() {
     
     next.hasMtl = next.hasGroup = next.hasObject = false;
     next.mtl = next.group = next.object = "";
+    
+    invalidate_texcoords = invalidate_normals = false;
 }
 
 void WavefrontLoader::log(const char *msg, ...) {
@@ -379,6 +540,7 @@ void WavefrontLoader::resolve(Element &e) {
         e.vt = texCoords.size() + e.vt;
     }else if(e.vt == 0) {
         e.vt = -1;
+        invalidate_texcoords = true;
     }else {
         e.vt -= 1;
     }
@@ -387,6 +549,7 @@ void WavefrontLoader::resolve(Element &e) {
         e.vn = normals.size() + e.vn;
     }else if(e.vn == 0) {
         e.vn = -1;
+        invalidate_normals = true;
     }else {
         e.vn -= 1;
     }

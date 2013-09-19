@@ -29,7 +29,6 @@ namespace cs354 {
     };
     
     struct MaterialGroup {
-        MaterialGroup(const std::string &name);
         MaterialGroup(const std::string &name,
                       const Material &mat = Material::Default);
         ~MaterialGroup();
@@ -42,7 +41,7 @@ namespace cs354 {
     };
     
     struct Group {
-        Group(const std::string &name);
+        Group(const std::string &name, const Model *owner);
         ~Group();
         
         MaterialGroup & get(const char *name);
@@ -50,10 +49,14 @@ namespace cs354 {
         
         std::string name;
         std::list<MaterialGroup> matgroups;
+        const Model *owner;
     };
     struct Object {
         Object(const std::string &name, const Model *owner);
         ~Object();
+        
+        Group & get(const std::string &name);
+        Group & get(const char *name);
         
         std::string name;
         std::list<Group> groups;
@@ -67,10 +70,9 @@ namespace cs354 {
         Model();
         ~Model();
         
-        Object get(const std::string &name);
-        Object get(const char *name);
+        Object & get(const std::string &name);
+        Object & get(const char *name);
         
-        void trim();
         void draw();
         
         const Material * getMaterial(const char *name) const;
@@ -79,14 +81,10 @@ namespace cs354 {
         friend class ModelParserState;
         friend class WavefrontLoader;
     protected:
-        GLfloat min_x, max_x;
-        GLfloat min_y, max_y;
-        GLfloat min_z, max_z;
-        
         std::vector<GLfloat> vertices; /*< Triplet */
         std::vector<GLfloat> normals; /*< Triplet */
         std::vector<GLfloat> texture; /*< Pair */
-        std::list<Object> groups;
+        std::list<Object> objects;
         std::map<std::string, Material> materials;
     };
 }

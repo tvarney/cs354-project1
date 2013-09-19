@@ -42,6 +42,15 @@ namespace cs354 {
         std::map<std::string, LoaderGroup> groups;
     };
     
+    /* Biggest class in the project. As it supports both the wavefront object
+     * and wavefront material formats, this makes sense. Doesn't make it any
+     * easier to understand though. Essentially, the 'public' api consists of
+     * the top functions 'Model * load(const char *,...)' and
+     * 'void use(std::map<>&)'. Everything else is public for the bison
+     * generated parser to access through a global pointer to the current
+     * Loader. This makes the Loader impossible to thread, but that's not too
+     * important for this project. It could be fixed by using re-entrant
+     * parsers, but that's more work than I want to do right now. */
     class WavefrontLoader {
     public:
         WavefrontLoader(bool keep_materials = false,
@@ -83,6 +92,7 @@ namespace cs354 {
         void map_tr(const char *trmap);
         void bump(const char *bumpmap);
         void decal(const char *decal);
+        void illum(int illval);
     private:
         /* Helper function to clear out data */
         void parse(const char *fname);
@@ -108,6 +118,8 @@ namespace cs354 {
         std::vector<Vertex> vertices;
         std::vector<TextureCoord> texCoords;
         std::vector<Normal> normals;
+        
+        bool invalidate_texcoords, invalidate_normals;
         
         /* Useful stats for calculating bounding box and centering transforms
          */
@@ -155,6 +167,8 @@ namespace cs354 {
             LoaderObject *object;
         } current;
     };
+    
+    extern WavefrontLoader *loader;
 }
 
 #endif

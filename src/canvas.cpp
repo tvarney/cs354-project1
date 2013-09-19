@@ -17,8 +17,8 @@
 #include "vrml.hpp"
 #include "mouse.hpp"
 #include "generic/Model.hpp"
-#include "generic/ModelIO.hpp"
 #include "generic/Shader.hpp"
+#include "generic/WavefrontLoader.hpp"
 
 /* The current vrml object */
 int vr_object;
@@ -94,14 +94,16 @@ void init(int argc, char **argv) {
         fputs("Warning: Model already initialized. This shouldn't happen.",
               stderr);
     }else {
+        cs354::WavefrontLoader *loader = new cs354::WavefrontLoader();
         printf("Loading model from %s\n", _model);
         try {
-            model = cs354::ModelIO::Load(_model);
+            model = loader->load(_model);
         }catch(std::exception &err) {
             fprintf(stderr, "Could not load model:\n%s\n", err.what());
         }catch(...) {
             fputs("Unknown error", stderr);
         }
+        delete loader;
     }
 }
 
@@ -307,6 +309,11 @@ void myKeyHandler(unsigned char ch, int x, int y) {
     case 'm':
     case 'M':
         draw_model = !draw_model;
+        if(draw_model) {
+            printf("Free Scene: Drawing model\n");
+        }else {
+            printf("Free Scene: Drawing GLUT shapes\n");
+        }
         break;
     case 'I':
         _radius += 0.1;

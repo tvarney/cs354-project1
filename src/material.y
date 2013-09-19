@@ -3,21 +3,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include "generic/ModelIO.hpp"
+#include "generic/WavefrontLoader.hpp"
 #include "common.hpp"
 #define YYERROR_VERBOSE 1
     int mat_lex(void);
     void mat_error(const char *);
     extern char *mat_text;
     extern int mat_leng;
-    extern cs354::ModelParserState cs354::model_parser_state;
     void mat_unsupported(const char *msg, ...);
     extern int mat_lineno;
     using namespace cs354;
 }
 
 %code requires {
-#include "generic/ModelIO.hpp"
+#include "generic/WavefrontLoader.hpp"
 #include "common.hpp"
 }
 
@@ -50,11 +49,11 @@ exp:
 ;
 
 statement:
-  KA float_triple  { model_parser_state.ka($2); }
-| KD float_triple  { model_parser_state.kd($2); }
-| KS float_triple  { model_parser_state.ks($2); }
+  KA float_triple  { cs354::loader->ka($2); }
+| KD float_triple  { cs354::loader->kd($2); }
+| KS float_triple  { cs354::loader->ks($2); }
 | KE float_triple  { mat_unsupported("ke %f %f %f", $2[0], $2[1], $2[2]); }
-| NS floatval      { model_parser_state.ns($2); }
+| NS floatval      { cs354::loader->ns($2); }
 | TR floatval      { mat_unsupported("tr %f", $2); }
 | MAP_KA strval    { mat_unsupported("map_ka %s", $2); }
 | MAP_KD strval    { mat_unsupported("map_kd %s", $2); }
@@ -62,7 +61,8 @@ statement:
 | MAP_TR strval    { mat_unsupported("map_tr %s", $2); }
 | MAP_BUMP strval  { mat_unsupported("map_bump %s", $2); }
 | MAP_DECAL strval { mat_unsupported("map_decal %s", $2); }
-| NEWMTL strval    { model_parser_state.newmtl($2); }
+| NEWMTL strval    { cs354::loader->newmtl($2); }
+| ILLUM intv       { mat_unsupported("illum %d", $2); }
 ;
 
 float_triple:

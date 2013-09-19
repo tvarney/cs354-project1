@@ -20,10 +20,11 @@
     return TYPE_FLOAT;
 }
 
-"ka"        return KA;
-"kd"        return KD;
-"ks"        return KS;
-"tr"        return TR;
+("Ka"|"ka") return KA;
+("Kd"|"kd") return KD;
+("Ks"|"ks") return KS;
+("Ns"|"ns") return NS;
+("Tr"|"tr") return TR;
 "d"         return TR;
 "map_ka"    return MAP_KA;
 "map_kd"    return MAP_KD;
@@ -34,6 +35,7 @@
 "map_bump"  return MAP_BUMP;
 "decal"     return MAP_DECAL;
 "map_decal" return MAP_DECAL;
+"illum"     return ILLUM;
 "newmtl"    return NEWMTL;
 
 [a-zA-Z0-9'_''.']+ { return TYPE_STRING; }

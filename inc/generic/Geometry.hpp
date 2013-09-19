@@ -12,12 +12,12 @@ namespace cs354 {
         
         Element & operator=(const Element &rhs);
         
-        bool operator==(const Element &rhs);
+        bool operator==(const Element &rhs) const;
         /* Ordering, not used to denote anything of geometric significance */
-        bool operator<(const Element &rhs);
-        bool operator>(const Element &rhs);
-        bool operator<=(const Element &rhs);
-        bool operator>=(const Element &rhs);
+        bool operator<(const Element &rhs) const;
+        bool operator>(const Element &rhs) const;
+        bool operator<=(const Element &rhs) const;
+        bool operator>=(const Element &rhs) const;
         
         int v, vt, vn;
     };

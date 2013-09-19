@@ -2,18 +2,17 @@
 %code top {
 #include <stdio.h>
 #include <stdlib.h>
-#include "generic/ModelIO.hpp"
+#include "generic/WavefrontLoader.hpp"
 #include "common.hpp"
 #define YYERROR_VERBOSE 1
     int wf_lex(void);
     void wf_error(const char *);
     extern char *wf_text;
     extern int wf_leng;
-    extern cs354::ModelParserState cs354::model_parser_state;
 }
 
 %code requires {
-#include "generic/ModelIO.hpp"
+#include "generic/WavefrontLoader.hpp"
 #include "common.hpp"
     extern int wf_lineno;
 }
@@ -55,19 +54,19 @@ exp:
 ;
 
 statement:
-  "v" float_triple  { cs354::model_parser_state.vertex($2); }
-| "vn" float_triple { cs354::model_parser_state.normal($2); }
-| "vt" float_triple { cs354::model_parser_state.texture($2); }
-| "f" face_arg_list { cs354::model_parser_state.face(); }
-| "g" strval        { cs354::model_parser_state.group($2); }
+  "v" float_triple  { cs354::loader->v($2); }
+| "vn" float_triple { cs354::loader->vn($2); }
+| "vt" float_triple { cs354::loader->vt($2); }
+| "f" face_arg_list { cs354::loader->f(); }
+| "g" strval        { cs354::loader->g($2); }
 | "s" intv          { fprintf(stderr, "Unsupported Function: 's %d'\n", $2); }
-| "mtllib" strval   { cs354::model_parser_state.mtllib($2); }
-| "usemtl" strval   { cs354::model_parser_state.usemtl($2); }
+| "mtllib" strval   { cs354::loader->mtllib($2); }
+| "usemtl" strval   { cs354::loader->usemtl($2); }
 ;
 
 face_arg_list:
-  face_arg               { cs354::model_parser_state.face_arg($1); }
-| face_arg_list face_arg { cs354::model_parser_state.face_arg($2); }
+  face_arg               { cs354::loader->fArg($1); }
+| face_arg_list face_arg { cs354::loader->fArg($2); }
 ;
 
 face_arg:
