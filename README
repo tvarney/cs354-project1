@@ -12,6 +12,7 @@ Things of Note:
 Makefile changed significantly.
 Project requires bison and flex to compile (both are on standard CS machines).
 Project 'translated' to C++.
+Significantly rewrote vrml.cpp to use classes to hide raw state.
 
 To make the project works exactly the same, just type 'make'.
 To run the project, either directly run the generated executable, or type
@@ -29,3 +30,27 @@ Extras:
    are ./data/shaders/free.vs and ./data/shaders/free.fs, which implement a
    slightly shoddy form of ADS lighting.
 4. The code can load textures from png files. This is currently not used.
+5. Alternate models and shaders may be loaded by specifying them as command
+   line arguments. The format for this is:
+   Model:
+     -m FILE
+   Shader:
+     -s BASENAME
+   The model argument expects the full path+filename of a valid wavefront
+   object file, though it doesn't need to follow any specific naming
+   conventions.
+   The shader argument expects the 'basename' of the shader, that is the full
+   path plus the common name between the vertex and fragment shader. For the
+   default shader, this would be "./data/shaders/free", which is then converted
+   to "./data/shaders/free.vs" and "./data/shaders/free.fs". Fragment shaders
+   must use the file extension ".fs" and vertex shaders ".vs".
+   The program binds values to uniforms:
+     "Ka" -> vec3
+     "Kd" -> vec3
+     "Ks" -> vec3
+     "Tr" -> float
+     "Ns" -> float
+     "Light.Position" -> vec4
+     "Light.La" -> vec3
+     "Light.Ld" -> vec3
+     "Light.Ls" -> vec3

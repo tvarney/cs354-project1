@@ -379,7 +379,9 @@ void WavefrontLoader::translate(Vertex origin) {
     
     /* Compute the translation required to center around origin */
     Vector<GLfloat> translation(max.x - min.x, max.y - min.y, max.z - min.z);
-    translation *= -0.5f;
+    translation *= 0.5f;
+    translation += Vector<GLfloat>(min.x, min.y, min.z);
+    translation *= -1.0f;
     /* Get vector to origin point, add it to our calculated translation */
     /*TODO: Check my math. I think this results in the correct vector */
     translation += origin.toVector();

@@ -41,13 +41,51 @@ GLfloat zoomFactor = 1.0;
 
 double _height = 1.0, _radius = 1.0, _base_tri = 8;
 
+bool load_shaders(const char *basename) {
+    std::string vshader = std::string(basename) + std::string(".vs");
+    std::string fshader = std::string(basename) + std::string(".fs");
+    try {
+        shader = new cs354::Shader();
+        printf("Loading vertex shader from '%s'\n", vshader.c_str());
+        FILE *fp = fopen(vshader.c_str(), "r");
+        if(!fp) {
+            fprintf(stderr, "Could not open '%s'\n", vshader.c_str());
+            if(shader) {
+                delete shader;
+            }
+            shader = NULL;
+            return false;
+        }
+        shader->add(GL_VERTEX_SHADER, fp);
+        fclose(fp);
+        
+        printf("Loading fragment shader from '%s'\n", fshader.c_str());
+        fp = fopen(fshader.c_str(), "r");
+        if(!fp) {
+            fprintf(stderr, "Could not open '%s'\n", fshader.c_str());
+            delete shader;
+            shader = NULL;
+            return false;
+        }
+        shader->add(GL_FRAGMENT_SHADER, fp);
+        
+        shader->link();
+    }catch(std::exception &err) {
+        fprintf(stderr, "Could not load shaders:\n%s\n", err.what());
+        return false;
+    }catch(...) {
+        fputs("Unknown error", stderr);
+        return false;
+    }
+    return true;
+}
+
 /*
  * Performs specific initializations for this program (as opposed to
  * glut initialization.
  */
-static const char _vshader[] = "./data/shaders/free.vs";
-static const char _fshader[] = "./data/shaders/free.fs";
-static const char _model[] = "./data/model/model.obj";
+static const char _default_model[] = "./data/model/model.obj";
+static const char _default_shader_base[] = "./data/shaders/free";
 void init(int argc, char **argv) {
     /* Set the default display mode and style */
     disp_mode = DM_CUBE_GLUT;
@@ -58,37 +96,40 @@ void init(int argc, char **argv) {
     
     resetCamera();
     
+    const char *_model = _default_model;
+    const char *shader_base = _default_shader_base;
+    
+    int c;
+    while((c = getopt(argc, argv, "m:s:")) != -1) {
+        switch(c) {
+        case 'm':
+            _model = optarg;
+            break;
+        case 's':
+            shader_base = optarg;
+            break;
+        case '?':
+        default:
+            if(optopt == 'm' || optopt == 's') {
+                fprintf(stderr, "Option -%c requires an argument.\n", optopt);
+            }else if(std::isprint(optopt)) {
+                fprintf(stderr, "Unknown option '-%c'.\n", optopt);
+            }else {
+                fprintf(stderr, "Uknown option '\\x%x'.\n", optopt);
+            }
+            break;
+        }
+    }
+    
     if(shader) {
         fputs("Warning: Shader already initialized. This shouldn't happen",
               stderr);
     }else {
-        puts("Loading shaders from ./data/shaders ...");
-        try {
-            shader = new cs354::Shader();
-            FILE *fp = fopen(_vshader, "r");
-            if(!fp) {
-                fprintf(stderr, "Could not open '%s'\n", _vshader);
-                delete shader;
+        if(!load_shaders(shader_base)) {
+            fprintf(stderr, "Falling back to default shader location\n");
+            if(!load_shaders(_default_shader_base)) {
                 shader = NULL;
-                return;
             }
-            shader->add(GL_VERTEX_SHADER, fp);
-            fclose(fp);
-            
-            fp = fopen(_fshader, "r");
-            if(!fp) {
-                fprintf(stderr, "Could not open '%s'\n", _fshader);
-                delete shader;
-                shader = NULL;
-                return;
-            }
-            shader->add(GL_FRAGMENT_SHADER, fp);
-            
-            shader->link();
-        }catch(std::exception &err) {
-            fprintf(stderr, "Could not load shaders:\n%s\n", err.what());
-        }catch(...) {
-            fputs("Unknown error", stderr);
         }
     }
     if(model) {
