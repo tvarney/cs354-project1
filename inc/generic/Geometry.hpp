@@ -61,7 +61,7 @@ namespace cs354 {
         Vector<T> operator*(T &scalar) const {
             return Vector<T>(vx * scalar, vy * scalar, vz * scalar);
         }
-        Vector<T> & operator*=(T &scalar) {
+        Vector<T> & operator*=(T scalar) {
             vx *= scalar;
             vy *= scalar;
             vz *= scalar;

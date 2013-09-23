@@ -98,7 +98,7 @@ void init(int argc, char **argv) {
         cs354::WavefrontLoader *loader = new cs354::WavefrontLoader();
         printf("Loading model from %s\n", _model);
         try {
-            model = loader->load(_model, 2.0);
+            model = loader->load(_model, cs354::Vertex(0.0, 0.0, 0.0), 2.0);
         }catch(std::exception &err) {
             fprintf(stderr, "Could not load model:\n%s\n", err.what());
         }catch(...) {

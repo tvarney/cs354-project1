@@ -359,6 +359,13 @@ void WavefrontLoader::scale(GLfloat maxdim) {
          * point. */
         vertices[i] = (vertices[i].toVector() * scalefactor).toPoint();
     }
+    
+    max.x *= scalefactor;
+    max.y *= scalefactor;
+    max.z *= scalefactor;
+    min.x *= scalefactor;
+    min.y *= scalefactor;
+    min.z *= scalefactor;
 }
 void WavefrontLoader::translate(Vertex origin) {
     size_t nvertices = vertices.size();
@@ -366,8 +373,13 @@ void WavefrontLoader::translate(Vertex origin) {
         return;
     }
     
+    log("Bounding Box:\n  Max:\n    x: %f\n    y: %f\n    z: %f\n"
+        "  Min:\n    x: %f\n    y: %f\n    z: %f\n",
+        max.x, max.y, max.z, min.x, min.y, min.z);
+    
     /* Compute the translation required to center around origin */
-    Vector<GLfloat> translation(-(max.x-min.x),-(max.y-min.y),-(max.z-min.z));
+    Vector<GLfloat> translation(max.x - min.x, max.y - min.y, max.z - min.z);
+    translation *= -0.5f;
     /* Get vector to origin point, add it to our calculated translation */
     /*TODO: Check my math. I think this results in the correct vector */
     translation += origin.toVector();
@@ -378,6 +390,12 @@ void WavefrontLoader::translate(Vertex origin) {
     for(size_t i = 0; i < nvertices; ++i) {
         vertices[i] += translation;
     }
+    max.x += translation.vx;
+    max.y += translation.vy;
+    max.z += translation.vz;
+    min.x += translation.vx;
+    min.y += translation.vy;
+    min.z += translation.vz;
 }
 
 typedef std::map<std::string, LoaderObject>::const_iterator lo_iter;
