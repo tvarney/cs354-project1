@@ -82,8 +82,8 @@ Model * WavefrontLoader::load(const char *fname, Vertex origin,
 {
     loader = this;
     parse(fname);
-    scale(max_dim);
     translate(origin);
+    scale(max_dim);
     return cache_to_model();
 }
 
@@ -350,7 +350,9 @@ void WavefrontLoader::scale(GLfloat maxdim) {
     GLfloat diffz = max.z - min.z;
     GLfloat maxdiff = (diffx > diffy ? diffx : diffy);
     maxdiff = (maxdiff > diffz ? maxdiff : diffz);
-    GLfloat scalefactor = maxdiff / maxdim;
+    GLfloat scalefactor = maxdim / maxdiff;
+    
+    log("Scaling vertices %f\n", scalefactor);
     
     for(size_t i = 0; i < nvertices; ++i) {
         /* Translate point to vector from origin, scale vector, convert back to
@@ -370,12 +372,19 @@ void WavefrontLoader::translate(Vertex origin) {
     /*TODO: Check my math. I think this results in the correct vector */
     translation += origin.toVector();
     
+    log("Translating vertices <%f, %f, %f>\n", translation.vx, translation.vy,
+        translation.vz);
+    
     for(size_t i = 0; i < nvertices; ++i) {
         vertices[i] += translation;
     }
 }
 
+typedef std::map<std::string, LoaderObject>::const_iterator lo_iter;
+typedef std::map<std::string, LoaderGroup>::const_iterator lg_iter;
+typedef std::map<std::string, LoaderMatGroup>::const_iterator lmg_iter;
 Model * WavefrontLoader::cache_to_model() {
+    size_t nobjects = 0, ngroups = 0, nelements = 0;
     Model * model = new Model();
     
     /* Copy model materials over to the newly created model */
@@ -388,32 +397,36 @@ Model * WavefrontLoader::cache_to_model() {
     
     /* Copy elements, ensuring that each element triple corresponds to a single
      * index in the model. This is...annoying to do. */
-    std::map<std::string, LoaderObject>::iterator lobj_iter;
-    std::map<std::string, LoaderGroup>::iterator lgroup_iter, lgroup_end;
-    std::map<std::string, LoaderMatGroup>::iterator lmgroup_iter, lmgroup_end;
+    lo_iter lobj_iter, lobj_end;
+    lg_iter lgroup_iter, lgroup_end;
+    lmg_iter lmgroup_iter, lmgroup_end;
     std::map<Element, GLuint>::iterator element_iter;
+    
     for(lobj_iter = objects.begin(); lobj_iter != objects.end(); ++lobj_iter) {
+        nobjects += 1;
         /* Get current LoaderObject and create a model object to correspond */
-        LoaderObject &lobj = lobj_iter->second;
+        const LoaderObject &lobj = lobj_iter->second;
         Object &object = model->get(lobj_iter->first);
         
         lgroup_end = lobj.groups.end();
         lgroup_iter = lobj.groups.begin();
         for(; lgroup_iter != lgroup_end; ++lgroup_iter) {
+            ngroups += 1;
             /* Get current LoaderGroup and create model group to correspond */
-            LoaderGroup &lgroup = lgroup_iter->second;
+            const LoaderGroup &lgroup = lgroup_iter->second;
             Group &group = object.get(lgroup_iter->first);
             
             lmgroup_end = lgroup.material_groups.end();
             lmgroup_iter = lgroup.material_groups.begin();
             for(; lmgroup_iter != lmgroup_end; ++lmgroup_iter) {
                 /* Get current Material Group, create Model Material Group */
-                LoaderMatGroup &lmgroup = lmgroup_iter->second;
+                const LoaderMatGroup &lmgroup = lmgroup_iter->second;
                 MaterialGroup &mgroup = group.get(lmgroup.mtlname);
                 
                 size_t ntri = lmgroup.faces.size();
+                nelements += ntri;
                 for(size_t i = 0; i < ntri; ++i) {
-                    Triangle &tri = lmgroup.faces[i];
+                    Triangle tri = lmgroup.faces[i];
                     /* Do the delayed invalidation requested by resolve() */
                     if(invalidate_texcoords) {
                         tri.v1.vt = -1;
@@ -436,7 +449,6 @@ Model * WavefrontLoader::cache_to_model() {
                     }else {
                         elementid = element_iter->second;
                     }
-                    /* yeaaaah */
                     mgroup.elements.push_back(elementid);
                     
                     element_iter = elements.find(tri.v2);
@@ -466,6 +478,20 @@ Model * WavefrontLoader::cache_to_model() {
             }
         }
     }
+    
+    /* Display model statistics */
+    log("Converted Model from cache to OpenGL representation\n");
+    log("Model Statistics:\n");
+    log("    # Objects: %llu\n", (unsigned long long)nobjects);
+    log("     # Groups: %llu\n", (unsigned long long)ngroups);
+    log("  # Materials: %llu\n",(unsigned long long)(model->materials.size()));
+    log("   # Vertices: %llu\n",
+        (unsigned long long)(model->vertices.size()) / 3);
+    log(" # Tex Coords: %llu\n",
+        (unsigned long long)(model->texture.size()) / 2);
+    log("    # Normals: %llu\n",
+        (unsigned long long)(model->normals.size()) / 3);
+    log("  # Triangles: %llu\n", (unsigned long long)nelements);
     return model;
 }
 
@@ -519,7 +545,7 @@ void WavefrontLoader::resolve(Element &e) {
     }else if(e.vt == 0) {
         e.vt = -1;
         if(!invalidate_texcoords) {
-            log("Invalidating Texture Coordinates: %d\n", e.vt);
+            log("Invalidating Texture Coordinates: invalid index\n");
         }
         invalidate_texcoords = true;
     }else {
@@ -531,7 +557,7 @@ void WavefrontLoader::resolve(Element &e) {
     }else if(e.vn == 0) {
         e.vn = -1;
         if(!invalidate_normals) {
-            log("Invalidating Normals: %d\n", e.vn);
+            log("Invalidating Normals: invalid index\n");
         }
         invalidate_normals = true;
     }else {
@@ -617,6 +643,7 @@ void WavefrontLoader::push_element(const Element &e, Model *mptr) {
     mptr->vertices.push_back(vertices[e.v].z);
     if(!invalidate_texcoords) {
         if((unsigned long long)e.vt >= texCoords.size()) {
+            log("Invalidating Textures: texture index out of bounds\n");
             invalidate_texcoords = true;
             mptr->texture.clear();
         }else {
@@ -625,7 +652,8 @@ void WavefrontLoader::push_element(const Element &e, Model *mptr) {
         }
     }
     if(!invalidate_normals) {
-        if((unsigned long long)e.vn >= texCoords.size()) {
+        if((unsigned long long)e.vn >= normals.size()) {
+            log("Invalidating Normals: normal index out of bounds\n");
             invalidate_normals = true;
             mptr->normals.clear();
         }else {
