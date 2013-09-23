@@ -24,21 +24,6 @@ WavefrontLoader * cs354::loader;
 /**************************************************/
 /* Defines to make my life easier */
 #define RuntimeError(msg) std::runtime_error(std::string(msg))
-#define Push_Element(element, modelptr, verts, inv_tex, tex, inv_norm, norms) \
-    do {                                                                \
-        (model)->vertices.push_back((verts)[(element).v].x);            \
-        (model)->vertices.push_back((verts)[(element).v].y);            \
-        (model)->vertices.push_back((verts)[(element).v].z);            \
-        if(!(inv_tex)) {                                                \
-            (model)->texture.push_back((tex)[(element).vt].x);          \
-            (model)->texture.push_back((tex)[(element).vt].y);          \
-        }                                                               \
-        if(!(inv_norm)) {                                               \
-            (model)->normals.push_back((norms)[(element).vn].vx);       \
-            (model)->normals.push_back((norms)[(element).vn].vy);       \
-            (model)->normals.push_back((norms)[(element).vn].vz);       \
-        }                                                               \
-    } while(false)
 
 static const char _inv_mat_ref[] =
     "Attempt to set %s without material reference.\n";
@@ -447,9 +432,7 @@ Model * WavefrontLoader::cache_to_model() {
                         current_element++;
                         elements[tri.v1] = elementid;
                         
-                        Push_Element(tri.v1, model, vertices,
-                                     invalidate_texcoords, texCoords,
-                                     invalidate_normals, normals);
+                        push_element(tri.v1, model);
                     }else {
                         elementid = element_iter->second;
                     }
@@ -462,9 +445,7 @@ Model * WavefrontLoader::cache_to_model() {
                         current_element++;
                         elements[tri.v2] = elementid;
                         
-                        Push_Element(tri.v2, model, vertices,
-                                     invalidate_texcoords, texCoords,
-                                     invalidate_normals, normals);
+                        push_element(tri.v2, model);
                     }else {
                         elementid = element_iter->second;
                     }
@@ -476,9 +457,7 @@ Model * WavefrontLoader::cache_to_model() {
                         current_element++;
                         elements[tri.v3] = elementid;
                         
-                        Push_Element(tri.v3, model, vertices,
-                                     invalidate_texcoords, texCoords,
-                                     invalidate_normals, normals);
+                        push_element(tri.v3, model);
                     }else {
                         elementid = element_iter->second;
                     }
@@ -487,7 +466,6 @@ Model * WavefrontLoader::cache_to_model() {
             }
         }
     }
-    
     return model;
 }
 
@@ -540,6 +518,9 @@ void WavefrontLoader::resolve(Element &e) {
         e.vt = texCoords.size() + e.vt;
     }else if(e.vt == 0) {
         e.vt = -1;
+        if(!invalidate_texcoords) {
+            log("Invalidating Texture Coordinates: %d\n", e.vt);
+        }
         invalidate_texcoords = true;
     }else {
         e.vt -= 1;
@@ -549,6 +530,9 @@ void WavefrontLoader::resolve(Element &e) {
         e.vn = normals.size() + e.vn;
     }else if(e.vn == 0) {
         e.vn = -1;
+        if(!invalidate_normals) {
+            log("Invalidating Normals: %d\n", e.vn);
+        }
         invalidate_normals = true;
     }else {
         e.vn -= 1;
@@ -596,7 +580,7 @@ void WavefrontLoader::newMatGroup(const std::string &name) {
     if(std::strcmp(name.c_str(), "") != 0) {
         miter = materials.find(name);
         if(miter == materials.end()) {
-            if(globalMaterialMap != NULL) {
+            if(globalMaterials && globalMaterialMap != NULL) {
                 miter = (*globalMaterialMap).find(name);
                 if(miter == (*globalMaterialMap).end()) {
                     log("Invalid material reference: %s\n", name.c_str());
@@ -620,6 +604,36 @@ void WavefrontLoader::newMatGroup(const std::string &name) {
     }
     
     next.hasMtl = false;
+}
+
+void WavefrontLoader::push_element(const Element &e, Model *mptr) {
+    if((unsigned long long)e.v >= vertices.size()) {
+        clear();
+        throw RuntimeError("Invalid Vertex index\n");
+    }
+    
+    mptr->vertices.push_back(vertices[e.v].x);
+    mptr->vertices.push_back(vertices[e.v].y);
+    mptr->vertices.push_back(vertices[e.v].z);
+    if(!invalidate_texcoords) {
+        if((unsigned long long)e.vt >= texCoords.size()) {
+            invalidate_texcoords = true;
+            mptr->texture.clear();
+        }else {
+            mptr->texture.push_back(texCoords[e.vt].x);
+            mptr->texture.push_back(texCoords[e.vt].y);
+        }
+    }
+    if(!invalidate_normals) {
+        if((unsigned long long)e.vn >= texCoords.size()) {
+            invalidate_normals = true;
+            mptr->normals.clear();
+        }else {
+            mptr->normals.push_back(normals[e.vn].vx);
+            mptr->normals.push_back(normals[e.vn].vy);
+            mptr->normals.push_back(normals[e.vn].vz);
+        }
+    }
 }
 
 /**************************************************/

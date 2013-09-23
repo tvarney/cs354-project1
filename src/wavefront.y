@@ -60,6 +60,7 @@ statement:
 | "f" face_arg_list { cs354::loader->f(); }
 | "g" strval        { cs354::loader->g($2); }
 | "s" intv          { fprintf(stderr, "Unsupported Function: 's %d'\n", $2); }
+| "s" strval        { fprintf(stderr, "Unsupported Function: 's %s'\n", $2); }
 | "mtllib" strval   { cs354::loader->mtllib($2); }
 | "usemtl" strval   { cs354::loader->usemtl($2); }
 ;

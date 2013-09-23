@@ -106,6 +106,7 @@ namespace cs354 {
         void newGroup(const std::string &name);
         void newMatGroup(const std::string &name);
         
+        void push_element(const Element &e, Model *mptr);
         /* File information */
         std::string fname, libname, basename;
         FILE *fp;
