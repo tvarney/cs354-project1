@@ -21,7 +21,7 @@ void main()
 {
     vec3 tnorm = normalize( gl_NormalMatrix * gl_Normal);
     vec4 eyeCoords = gl_ModelViewMatrix * vec4(gl_Vertex);
-    vec3 s = normalize(vec3(Light.Position - eyeCoords));
+    vec3 s = normalize(vec3(Light.Position * gl_ModelViewMatrix - eyeCoords));
     vec3 v = normalize(-eyeCoords.xyz);
     vec3 r = reflect( -s, tnorm );
     vec3 ambient = Light.La * Ka;
