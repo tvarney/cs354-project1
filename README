@@ -8,18 +8,45 @@
  * Group Members: Troy Varney - tav285 [troy.a.varney@gmail.com]
  */
 
-Things of Note:
+Performance Test: Accelerated (GDC 3rd floor lab)
+    Mode    | Solid |  Wire |
+------------|-------|-------|
+   Mode 1   | 17.99 | 17.99 |
+   Mode 2   | 18.00 |       |
+   Mode 3   | 17.99 |       |
+   Mode 4   | 17.99 | 18.01 |
+   Mode 5   | 17.99 |       |
+   Mode 6   | 17.99 |       |
+   Mode 7   | 18.00 | 17.99 |
+ Mode 7 (2) | 18.00 | 18.00 |
+ Mode 9 (3) | 18.03 |       |
+
+(1) - Cone was drawn using 50, 50 for the third and fourth arguments.
+(2) - Second run was done with a triangulation of 50.
+(3) - The model and shader used were the default. The model has 158974 vertices
+      and normals, with 53010 triangles. The shader implements per vertex
+      ambient/diffuse/specular lighting.
+
+Performance Analysis: Accelerated
+  Performance was not significantly altered by drawing mode or even number of
+  vertices. It was only in the case of significantly large models (tens of
+  thousands of elements) that the performance degraded at all, and even then
+  it was only ~0.04 seconds slower than drawing a simple cube.
+
+Compilation Notes:
+==================
 Makefile changed significantly.
 Project requires bison and flex to compile (both are on standard CS machines).
 Project 'translated' to C++.
 Significantly rewrote vrml.cpp to use classes to hide raw state.
 
-To make the project works exactly the same, just type 'make'.
+To make the project works exactly the same as before, just type 'make'.
 To run the project, either directly run the generated executable, or type
 'make run'. This will compile the executable if it is not already present.
 Running 'make lines' will report the total line count of the project.
 
-Extras:
+Extra Credit
+============
 1. Both the VRML scene and the calculated cone respect the display style chosen
    for GLUT. This means if the display style is DS_WIRE, those scenes will
    display a wireframe. Press 's' to change them back to filled polygons.

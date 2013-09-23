@@ -24,6 +24,7 @@ CFLAGS := ${CPPFLAGS}
 #LIBDIR = -L/usr/lib/x86_64-linux-gnu
 # Libraries that use native graphics hardware --
 #LIBS = -lglut -lGLU -lGL -lpthread -lm
+#LIBS = -lglut -lMesaGLU -lMesaGL
 
 OBJECTS = $(patsubst %.cpp, %.o, $(wildcard ${SRC}/*.cpp))
 LEXERS = $(patsubst %.l, %.lex.c, $(wildcard ${SRC}/*.l))
