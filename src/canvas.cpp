@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdexcept>
+#include <unistd.h>
 
 #include "drawing.hpp"
 #include "vrml.hpp"
