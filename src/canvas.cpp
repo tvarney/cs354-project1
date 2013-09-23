@@ -148,6 +148,8 @@ void init(int argc, char **argv) {
         }
         delete loader;
     }
+    
+    draw_model = (model != NULL);
 }
 
 /*
