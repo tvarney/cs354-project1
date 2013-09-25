@@ -1,0 +1,16 @@
+# Blender MTL File: 'lamp.blend'
+# Material Count: 2
+newmtl LightMat
+Ns 7.843137
+Ka 0.7 0.7 0.7
+Kd 0.800000 0.800000 0.800000
+Ks 1.000000 1.000000 1.000000
+
+
+newmtl bronze
+Ns 96.078431
+Ka 0.2 0.125 0.025
+Kd 0.400000 0.250000 0.050000
+Ks 0.500000 0.500000 0.500000
+
+
