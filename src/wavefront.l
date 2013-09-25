@@ -25,6 +25,7 @@
 "v"      { return ID_V; }
 "f"      { return ID_F; }
 "/"      { return ID_SEP; }
+"o"      { return OBJECT; }
 "g"      { return GROUP; }
 "s"      { return ID_S; }
 "usemtl" { return USEMTL; }

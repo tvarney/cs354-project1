@@ -26,6 +26,7 @@
 }
 
 %defines
+%token OBJECT "o"
 %token GROUP "g"
 %token MTLLIB "mtllib"
 %token USEMTL "usemtl"
@@ -58,6 +59,7 @@ statement:
 | "vn" float_triple { cs354::loader->vn($2); }
 | "vt" float_triple { cs354::loader->vt($2); }
 | "f" face_arg_list { cs354::loader->f(); }
+| "o" strval        { cs354::loader->o($2); }
 | "g" strval        { cs354::loader->g($2); }
 | "s" intv          { fprintf(stderr, "Unsupported Function: 's %d'\n", $2); }
 | "s" strval        { fprintf(stderr, "Unsupported Function: 's %s'\n", $2); }
