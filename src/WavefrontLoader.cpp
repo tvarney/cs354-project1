@@ -149,7 +149,6 @@ void WavefrontLoader::fArg(int args[3]) {
 void WavefrontLoader::mtllib(const char *lib) {
     /* Here is the fun part, we call a new parser from within another parser */
     libname = basename + std::string("/") + std::string(lib);
-    log("Loading materials from %s\n", libname.c_str());
     FILE *libfp = fopen(libname.c_str(), "r");
     if(!libfp) {
         log("Could not open mtllib %s\n", libname.c_str());
@@ -302,9 +301,6 @@ void WavefrontLoader::parse(const char *file_name) {
         basename = std::string(fname, 0, last_sep);
     }
     
-    log("Loading from file %s, basename:\"%s\"\n", fname.c_str(),
-        basename.c_str());
-    
     /* Call the parser; this may throw an exception due to the wf_parse method
      * calling methods of WavefrontLoader that throw exceptions. To be safe,
      * any exceptions are caught, the file is closed, then the exception is
@@ -352,8 +348,6 @@ void WavefrontLoader::scale(GLfloat maxdim) {
     maxdiff = (maxdiff > diffz ? maxdiff : diffz);
     GLfloat scalefactor = maxdim / maxdiff;
     
-    log("Scaling vertices %f\n", scalefactor);
-    
     for(size_t i = 0; i < nvertices; ++i) {
         /* Translate point to vector from origin, scale vector, convert back to
          * point. */
@@ -373,10 +367,6 @@ void WavefrontLoader::translate(Vertex origin) {
         return;
     }
     
-    log("Bounding Box:\n  Max:\n    x: %f\n    y: %f\n    z: %f\n"
-        "  Min:\n    x: %f\n    y: %f\n    z: %f\n",
-        max.x, max.y, max.z, min.x, min.y, min.z);
-    
     /* Compute the translation required to center around origin */
     Vector<GLfloat> translation(max.x - min.x, max.y - min.y, max.z - min.z);
     translation *= 0.5f;
@@ -385,9 +375,6 @@ void WavefrontLoader::translate(Vertex origin) {
     /* Get vector to origin point, add it to our calculated translation */
     /*TODO: Check my math. I think this results in the correct vector */
     translation += origin.toVector();
-    
-    log("Translating vertices <%f, %f, %f>\n", translation.vx, translation.vy,
-        translation.vz);
     
     for(size_t i = 0; i < nvertices; ++i) {
         vertices[i] += translation;
@@ -500,7 +487,6 @@ Model * WavefrontLoader::cache_to_model() {
     }
     
     /* Display model statistics */
-    log("Converted Model from cache to OpenGL representation\n");
     log("Model Statistics:\n");
     log("    # Objects: %llu\n", (unsigned long long)nobjects);
     log("     # Groups: %llu\n", (unsigned long long)ngroups);
@@ -564,9 +550,6 @@ void WavefrontLoader::resolve(Element &e) {
         e.vt = texCoords.size() + e.vt;
     }else if(e.vt == 0) {
         e.vt = -1;
-        if(!invalidate_texcoords) {
-            log("Invalidating Texture Coordinates: invalid index\n");
-        }
         invalidate_texcoords = true;
     }else {
         e.vt -= 1;
@@ -576,9 +559,6 @@ void WavefrontLoader::resolve(Element &e) {
         e.vn = normals.size() + e.vn;
     }else if(e.vn == 0) {
         e.vn = -1;
-        if(!invalidate_normals) {
-            log("Invalidating Normals: invalid index\n");
-        }
         invalidate_normals = true;
     }else {
         e.vn -= 1;

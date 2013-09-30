@@ -452,11 +452,6 @@ void myKeyHandler(unsigned char ch, int x, int y) {
         /* Quit with exit code 0 */
         endCanvas(0);
         break;
-        /*********************************************/
-        /* ADD ADDITIONAL KEYS HERE                  */
-        /*********************************************/
-        
-        
     default:
         /* Unrecognized key press, just return */
         return;
@@ -489,7 +484,7 @@ int main(int argc, char **argv)
     glutInitWindowPosition(50, 50);
     
     /* Using: RGB (no alpha), double buffering, z-buffer */
-    glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
+    glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
     
     glutCreateWindow("Canvas");
     

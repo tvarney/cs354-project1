@@ -30,8 +30,21 @@ Email Address: troy.a.varney@gmail.com
    programmer is responsible for managing any matrices they wish to have
    manually. This allows for any number of matrices the programmer wants.
 
-3. 
-
+3. For each view of your scene, you would need to call glViewport() to define
+   the portion of the window that OpenGL will draw to, then either directly
+   manipulate the ModelView Matrix or use gluLookAt to position the 'camera'
+   how you want for that quadrant, then draw the scene for that viewport.
+   In the given example, the programmer would:
+     Call glViewport to define the first quadrant.
+     Call gluLookAt to look at the origin from along the z axis.
+     Draw the scene.
+     Call glViewport to define the second quadrant.
+     Call gluLookAt to look at the origin from along the x axis.
+     Draw the scene.
+     Call glViewport to define the third quadrant.
+     Call gluLookAt to look at the origin from along the y axis.
+     Draw the scene.
+     Flip the buffer using whatever library needed. (glutFlipBuffer)
 
 4. A single framebuffer can be used either when memory on the card is
    insufficient for multiple buffers. Because each buffer takes up an amount of
@@ -59,8 +72,8 @@ Email Address: troy.a.varney@gmail.com
    
    So, a better approach to drawing a line is to solve for '0 = ax + by + c'.
 
-6. There is too much to type, it doesn't look good when I try. Answer here, I
-   can submit paper work if requested.
+6. There is too much to type and it doesn't look good when I try. Answer here,
+   I can submit paper work if requested.
    
    TRyT =
    [

@@ -397,11 +397,7 @@ void draw_free_scene(void) {
     }
     
     if(model != NULL && draw_model) {
-        glPushMatrix();
-        
         model->draw();
-        
-        glPopMatrix();
     }else {
         if(shader != NULL) {
             _torus_mat.bind();
