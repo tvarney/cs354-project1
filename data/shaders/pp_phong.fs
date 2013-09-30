@@ -18,7 +18,8 @@ uniform float Ns;
 
 void main(void) {
     vec4 eyeCoords = gl_ModelViewMatrix * vec4(Vertex, 1);
-    vec4 LightPos = (Light.Position - eyeCoords) * gl_ModelViewMatrix;
+    //vec4 LightPos = (Light.Position - eyeCoords) * gl_ModelViewMatrix;
+    vec4 LightPos = Light.Position - eyeCoords;
     vec3 s = normalize(vec3(LightPos));
     vec3 v = normalize(-eyeCoords.xyz);
     vec3 r = reflect(-s, Normal);

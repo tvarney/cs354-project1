@@ -110,6 +110,7 @@ void WavefrontLoader::vn(GLfloat coords[3]) {
 void WavefrontLoader::vt(GLfloat coords[3]) {
     texCoords.push_back(TextureCoord(coords));
 }
+extern int wf_lineno;
 void WavefrontLoader::f() {
     /* Resolve any outstanding object, group or material requests */
     if(current.object == NULL || next.hasObject) {
@@ -122,7 +123,8 @@ void WavefrontLoader::f() {
     
     size_t fs_size = faceStack.size();
     if(fs_size < 3) {
-        log("Too few arguments to f: %d\n", int(fs_size));
+        log("Error on line %d: Too few arguments to f [%d]\n", wf_lineno,
+            int(fs_size));
         return;
     }
     
